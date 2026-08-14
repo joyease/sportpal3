@@ -3,72 +3,90 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>全年運動歷程 - SportPal</title>
+    <title>年度運動趨勢 - SportPal</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; color: #1e293b; }
         .logo-font { font-family: 'Plus Jakarta Sans', sans-serif; }
-        .chart-container { position: relative; height: 300px; width: 100%; }
+        .chart-container { position: relative; height: 320px; width: 100%; }
+        .glass-card { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.3); }
     </style>
 </head>
-<body class="p-4 md:p-8">
+<body class="p-4 md:p-10">
     <div class="max-w-6xl mx-auto">
         <!-- Header -->
-        <div class="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
+        <div class="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-6">
             <div>
-                <h1 class="logo-font text-3xl font-black text-gray-900 tracking-tight">全年運動歷程</h1>
-                <p class="text-gray-500 mt-1">1 ~ 12 月運動趨勢可視化 (全項目加總)</p>
+                <div class="inline-block px-3 py-1 bg-blue-50 text-blue-600 text-[10px] font-bold uppercase tracking-widest rounded-full mb-3">Statistics Dashboard</div>
+                <h1 class="logo-font text-4xl font-black text-gray-900 tracking-tight">年度運動趨勢</h1>
+                <p class="text-gray-500 mt-2 font-medium">1 ~ 12 月運動表現可視化數據分析</p>
             </div>
             
-            <div class="flex flex-col sm:flex-row gap-3 bg-white p-4 rounded-2xl shadow-sm border border-gray-200">
-                <div class="flex items-center gap-2">
-                    <div class="w-3 h-3 rounded-full bg-blue-500"></div>
-                    <span class="text-xs font-bold text-gray-600 uppercase tracking-wider">距離 (km)</span>
+            <div class="flex items-center gap-4 bg-white/50 p-2 rounded-2xl border border-gray-100">
+                <div class="flex items-center gap-2 px-3 py-1.5 bg-white rounded-xl shadow-sm">
+                    <div class="w-2.5 h-2.5 rounded-full bg-blue-500"></div>
+                    <span class="text-xs font-bold text-gray-700">距離 (km)</span>
                 </div>
-                <div class="flex items-center gap-2 border-l border-gray-100 pl-3">
-                    <div class="w-3 h-3 rounded-full bg-emerald-500"></div>
-                    <span class="text-xs font-bold text-gray-600 uppercase tracking-wider">時間 (min)</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- Stats Cards -->
-        <div id="statsSummary" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8 hidden">
-            <!-- JS 注入內容 -->
-        </div>
-
-        <!-- Charts Grid -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <!-- Distance Chart -->
-            <div class="bg-white p-6 rounded-[32px] shadow-sm border border-gray-100">
-                <h3 class="text-sm font-black text-gray-400 uppercase tracking-[0.2em] mb-6">每月總距離趨勢 (km)</h3>
-                <div class="chart-container">
-                    <canvas id="distanceChart"></canvas>
-                </div>
-            </div>
-
-            <!-- Duration Chart -->
-            <div class="bg-white p-6 rounded-[32px] shadow-sm border border-gray-100">
-                <h3 class="text-sm font-black text-gray-400 uppercase tracking-[0.2em] mb-6">每月總運動時間趨勢 (min)</h3>
-                <div class="chart-container">
-                    <canvas id="durationChart"></canvas>
+                <div class="flex items-center gap-2 px-3 py-1.5 bg-white rounded-xl shadow-sm">
+                    <div class="w-2.5 h-2.5 rounded-full bg-emerald-500"></div>
+                    <span class="text-xs font-bold text-gray-700">時間 (min)</span>
                 </div>
             </div>
         </div>
 
         <!-- Loading State -->
-        <div id="loading" class="flex flex-col items-center justify-center py-20">
-            <div class="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-            <p class="text-gray-400 font-bold tracking-widest uppercase text-xs">載入年度數據中...</p>
+        <div id="loading" class="flex flex-col items-center justify-center py-32 bg-white rounded-[40px] border border-dashed border-gray-200">
+            <div class="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+            <p class="text-gray-400 font-bold tracking-[0.2em] uppercase text-[10px]">正在同步雲端運動數據...</p>
         </div>
 
         <!-- Error State -->
-        <div id="error" class="hidden bg-red-50 p-8 rounded-[32px] text-center border border-red-100">
-            <p class="text-red-500 font-bold mb-2">無法讀取運動紀錄</p>
-            <p class="text-red-400 text-sm">請確認您已登入 SportPal 並擁有有效的雲端紀錄。</p>
+        <div id="error" class="hidden bg-red-50 p-12 rounded-[40px] text-center border border-red-100">
+            <div class="w-16 h-16 bg-red-100 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            </div>
+            <p class="text-red-600 font-black text-xl mb-2">無法讀取運動紀錄</p>
+            <p class="text-red-400 font-medium">請確認您已登入 SportPal 並同步數據。</p>
         </div>
+
+        <!-- Dashboard Content -->
+        <div id="dashboard" class="hidden">
+            <!-- Stats Summary -->
+            <div id="statsSummary" class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
+                <!-- JS Inject -->
+            </div>
+
+            <!-- Charts -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Distance Chart -->
+                <div class="bg-white p-8 rounded-[40px] shadow-sm border border-gray-100">
+                    <div class="flex items-center justify-between mb-8">
+                        <h3 class="text-xs font-black text-gray-400 uppercase tracking-[0.2em]">每月運動距離 (km)</h3>
+                        <div id="totalDistLabel" class="text-xs font-bold text-blue-500 bg-blue-50 px-3 py-1 rounded-full">-- km</div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="distanceChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Duration Chart -->
+                <div class="bg-white p-8 rounded-[40px] shadow-sm border border-gray-100">
+                    <div class="flex items-center justify-between mb-8">
+                        <h3 class="text-xs font-black text-gray-400 uppercase tracking-[0.2em]">每月運動時間 (min)</h3>
+                        <div id="totalDurLabel" class="text-xs font-bold text-emerald-500 bg-emerald-50 px-3 py-1 rounded-full">-- min</div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="durationChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer class="mt-16 text-center">
+            <p class="text-[10px] font-bold text-gray-300 uppercase tracking-[0.3em]">SportPal Analytics &copy; 2026</p>
+        </footer>
     </div>
 
     <!-- Firebase SDKs -->
@@ -101,9 +119,21 @@
                     );
                     const querySnapshot = await getDocs(q);
                     const records = [];
-                    querySnapshot.forEach((doc) => records.push(doc.data()));
+                    querySnapshot.forEach((doc) => {
+                        const data = doc.data();
+                        // 確保將 timestamp 轉為 Date 對象以便處理
+                        if (data.timestamp && data.timestamp.toDate) {
+                            data.dateObj = data.timestamp.toDate();
+                        } else if (data.timestamp) {
+                            data.dateObj = new Date(data.timestamp);
+                        } else if (data.date) {
+                            data.dateObj = new Date(data.date);
+                        }
+                        records.push(data);
+                    });
                     
                     document.getElementById('loading').classList.add('hidden');
+                    document.getElementById('dashboard').classList.remove('hidden');
                     processAndRender(records);
                 } catch (err) {
                     console.error("Error fetching records:", err);
@@ -111,19 +141,25 @@
                     document.getElementById('error').classList.remove('hidden');
                 }
             } else {
-                document.getElementById('loading').innerHTML = '<p class="text-gray-400 font-bold tracking-widest uppercase text-xs">請從主程式登入以檢視紀錄</p>';
+                document.getElementById('loading').innerHTML = `
+                    <div class="text-center p-8">
+                        <div class="w-16 h-16 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+                        </div>
+                        <p class="text-gray-900 font-black text-xl mb-2">尚未登入</p>
+                        <p class="text-gray-400 font-medium">請在 SportPal 主程式登入後再查看統計資訊。</p>
+                    </div>
+                `;
             }
         });
 
         function processAndRender(records) {
-            const now = new Date();
-            const currentYear = now.getFullYear();
+            // 使用 2026 年作為當前統計年度 (配合系統時間)
+            const currentYear = 2026; 
             const months = [];
             for (let i = 0; i < 12; i++) {
                 months.push({
                     label: (i + 1) + "月",
-                    year: currentYear,
-                    month: i,
                     distance: 0,
                     duration: 0,
                     count: 0
@@ -135,11 +171,14 @@
             let totalCount = 0;
 
             records.forEach(rec => {
-                const recDate = new Date(rec.timestamp || rec.date);
+                const recDate = rec.dateObj;
+                if (!recDate || isNaN(recDate.getTime())) return;
+
+                // 只統計 2026 年的數據
                 if (recDate.getFullYear() === currentYear) {
                     const monthIndex = recDate.getMonth();
-                    const dist = Number(rec.distance) || 0;
-                    const dur = Number(rec.duration) || 0;
+                    const dist = parseFloat(rec.distance) || 0;
+                    const dur = parseFloat(rec.duration) || 0;
 
                     if (monthIndex >= 0 && monthIndex < 12) {
                         months[monthIndex].distance += dist;
@@ -155,30 +194,32 @@
 
             renderStats(totalDist, totalDur, totalCount);
             renderCharts(months);
+            
+            document.getElementById('totalDistLabel').innerText = totalDist.toFixed(1) + ' km';
+            document.getElementById('totalDurLabel').innerText = totalDur.toFixed(0) + ' min';
         }
 
         function renderStats(dist, dur, count) {
             const container = document.getElementById('statsSummary');
-            container.classList.remove('hidden');
             const hours = (dur / 60).toFixed(1);
             const avgDist = (dist / 12).toFixed(1);
 
             container.innerHTML = `
-                <div class="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm text-center">
-                    <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">年度累積距離</div>
-                    <div class="text-2xl font-black text-blue-600">\${dist.toFixed(1)} <span class="text-xs text-gray-400">km</span></div>
+                <div class="bg-white p-6 rounded-[32px] border border-gray-100 shadow-sm transition-transform hover:scale-[1.02]">
+                    <div class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">年度累積里程</div>
+                    <div class="text-3xl font-black text-blue-600 tracking-tight">${dist.toFixed(1)} <span class="text-sm font-medium text-gray-400">km</span></div>
                 </div>
-                <div class="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm text-center">
-                    <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">年度總運動時間</div>
-                    <div class="text-2xl font-black text-emerald-600">\${hours} <span class="text-xs text-gray-400">hrs</span></div>
+                <div class="bg-white p-6 rounded-[32px] border border-gray-100 shadow-sm transition-transform hover:scale-[1.02]">
+                    <div class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">年度總時數</div>
+                    <div class="text-3xl font-black text-emerald-600 tracking-tight">${hours} <span class="text-sm font-medium text-gray-400">hrs</span></div>
                 </div>
-                <div class="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm text-center">
-                    <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">年度運動次數</div>
-                    <div class="text-2xl font-black text-purple-600">\${count} <span class="text-xs text-gray-400">次</span></div>
+                <div class="bg-white p-6 rounded-[32px] border border-gray-100 shadow-sm transition-transform hover:scale-[1.02]">
+                    <div class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">年度運動次數</div>
+                    <div class="text-3xl font-black text-purple-600 tracking-tight">${count} <span class="text-sm font-medium text-gray-400">次</span></div>
                 </div>
-                <div class="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm text-center">
-                    <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">月平均表現</div>
-                    <div class="text-2xl font-black text-orange-500">\${avgDist} <span class="text-xs text-gray-400">km</span></div>
+                <div class="bg-white p-6 rounded-[32px] border border-gray-100 shadow-sm transition-transform hover:scale-[1.02]">
+                    <div class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">月均運動距離</div>
+                    <div class="text-3xl font-black text-orange-500 tracking-tight">${avgDist} <span class="text-sm font-medium text-gray-400">km</span></div>
                 </div>
             `;
         }
@@ -191,59 +232,88 @@
             const commonOptions = {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
+                interaction: { intersect: false, mode: 'index' },
+                plugins: { 
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#1e293b',
+                        padding: 12,
+                        titleFont: { size: 14, weight: 'bold' },
+                        bodyFont: { size: 13 },
+                        cornerRadius: 12,
+                        displayColors: false
+                    }
+                },
                 scales: {
-                    y: { beginAtZero: true, grid: { color: '#f1f5f9' }, border: { display: false } },
-                    x: { grid: { display: false } }
+                    y: { 
+                        beginAtZero: true, 
+                        grid: { color: '#f1f5f9', drawBorder: false },
+                        ticks: { color: '#94a3b8', font: { size: 11, weight: '600' } }
+                    },
+                    x: { 
+                        grid: { display: false },
+                        ticks: { color: '#64748b', font: { size: 11, weight: '700' } }
+                    }
                 }
             };
 
+            if (distChart) distChart.destroy();
             distChart = new Chart(document.getElementById('distanceChart'), {
                 type: 'line',
                 data: {
                     labels: labels,
                     datasets: [{
+                        label: '距離 (km)',
                         data: distData,
                         borderColor: '#3b82f6',
-                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        backgroundColor: (context) => {
+                            const chart = context.chart;
+                            const {ctx, chartArea} = chart;
+                            if (!chartArea) return null;
+                            const gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
+                            gradient.addColorStop(0, 'rgba(59, 130, 246, 0)');
+                            gradient.addColorStop(1, 'rgba(59, 130, 246, 0.15)');
+                            return gradient;
+                        },
                         fill: true,
                         tension: 0.4,
-                        borderWidth: 3,
-                        pointRadius: 4,
-                        pointBackgroundColor: '#3b82f6'
+                        borderWidth: 4,
+                        pointRadius: 0,
+                        pointHoverRadius: 6,
+                        pointHoverBackgroundColor: '#3b82f6',
+                        pointHoverBorderColor: '#fff',
+                        pointHoverBorderWidth: 3
                     }]
                 },
                 options: commonOptions
             });
 
+            if (durChart) durChart.destroy();
             durChart = new Chart(document.getElementById('durationChart'), {
                 type: 'line',
                 data: {
                     labels: labels,
                     datasets: [{
+                        label: '時間 (min)',
                         data: durData,
                         borderColor: '#10b981',
-                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        backgroundColor: (context) => {
+                            const chart = context.chart;
+                            const {ctx, chartArea} = chart;
+                            if (!chartArea) return null;
+                            const gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
+                            gradient.addColorStop(0, 'rgba(16, 185, 129, 0)');
+                            gradient.addColorStop(1, 'rgba(16, 185, 129, 0.15)');
+                            return gradient;
+                        },
                         fill: true,
                         tension: 0.4,
-                        borderWidth: 3,
-                        pointRadius: 4,
-                        pointBackgroundColor: '#10b981'
-                    }]
-                },
-                options: commonOptions
-            });
-        }
-    </script>
-</body>
-</html>
-          borderColor: '#10b981',
-                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                        fill: true,
-                        tension: 0.4,
-                        borderWidth: 3,
-                        pointRadius: 4,
-                        pointBackgroundColor: '#10b981'
+                        borderWidth: 4,
+                        pointRadius: 0,
+                        pointHoverRadius: 6,
+                        pointHoverBackgroundColor: '#10b981',
+                        pointHoverBorderColor: '#fff',
+                        pointHoverBorderWidth: 3
                     }]
                 },
                 options: commonOptions
