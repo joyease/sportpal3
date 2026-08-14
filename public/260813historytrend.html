@@ -3,20 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SportPal · 運動統計趨勢</title>
+    <title>全年運動歷程 - SportPal</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Noto Sans TC', sans-serif; background: #f9fafb; }
-        .logo-font { font-family: 'Syne', sans-serif; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; }
+        .logo-font { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .chart-container { position: relative; height: 300px; width: 100%; }
     </style>
 </head>
 <body class="p-4 md:p-8">
-    <div class="max-w-5xl mx-auto">
+    <div class="max-w-6xl mx-auto">
         <!-- Header -->
         <div class="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
             <div>
@@ -25,119 +23,102 @@
             </div>
             
             <div class="flex flex-col sm:flex-row gap-3 bg-white p-4 rounded-2xl shadow-sm border border-gray-200">
-                <div class="flex flex-col gap-1 flex-1">
-                    <label class="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Gmail 帳號</label>
-                    <input type="email" id="emailInput" placeholder="請輸入欲查詢的 Gmail 帳號" onkeydown="if(event.key==='Enter') fetchData()"
-                           class="border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all w-full min-w-[280px]">
+                <div class="flex items-center gap-2">
+                    <div class="w-3 h-3 rounded-full bg-blue-500"></div>
+                    <span class="text-xs font-bold text-gray-600 uppercase tracking-wider">距離 (km)</span>
                 </div>
-                <button onclick="fetchData()" id="searchBtn" class="bg-gray-900 text-white px-6 py-2 rounded-lg font-bold text-sm hover:bg-black transition-all self-end h-[38px] shadow-sm">
-                    查詢統計
-                </button>
+                <div class="flex items-center gap-2 border-l border-gray-100 pl-3">
+                    <div class="w-3 h-3 rounded-full bg-emerald-500"></div>
+                    <span class="text-xs font-bold text-gray-600 uppercase tracking-wider">時間 (min)</span>
+                </div>
             </div>
         </div>
 
+        <!-- Stats Cards -->
+        <div id="statsSummary" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8 hidden">
+            <!-- JS 注入內容 -->
+        </div>
+
         <!-- Charts Grid -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <!-- Distance Chart -->
-            <div class="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
-                <h2 class="text-lg font-bold text-gray-800 mb-6 flex items-center gap-2">
-                    <span class="w-2 h-6 bg-blue-500 rounded-full"></span> 每月總距離趨勢 (km)
-                </h2>
-                <div class="h-64">
+            <div class="bg-white p-6 rounded-[32px] shadow-sm border border-gray-100">
+                <h3 class="text-sm font-black text-gray-400 uppercase tracking-[0.2em] mb-6">每月總距離趨勢 (km)</h3>
+                <div class="chart-container">
                     <canvas id="distanceChart"></canvas>
                 </div>
             </div>
 
             <!-- Duration Chart -->
-            <div class="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
-                <h2 class="text-lg font-bold text-gray-800 mb-6 flex items-center gap-2">
-                    <span class="w-2 h-6 bg-emerald-500 rounded-full"></span> 每月總時間趨勢 (min)
-                </h2>
-                <div class="h-64">
+            <div class="bg-white p-6 rounded-[32px] shadow-sm border border-gray-100">
+                <h3 class="text-sm font-black text-gray-400 uppercase tracking-[0.2em] mb-6">每月總運動時間趨勢 (min)</h3>
+                <div class="chart-container">
                     <canvas id="durationChart"></canvas>
                 </div>
             </div>
         </div>
 
-        <!-- Summary Stats -->
-        <div id="summaryCards" class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 hidden">
-            <!-- Dynamic Stats will be injected here -->
+        <!-- Loading State -->
+        <div id="loading" class="flex flex-col items-center justify-center py-20">
+            <div class="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+            <p class="text-gray-400 font-bold tracking-widest uppercase text-xs">載入年度數據中...</p>
         </div>
 
-        <div id="statusText" class="text-center text-gray-400 text-sm mt-12 italic">
-            請輸入 Gmail 帳號並按查詢以載入數據
+        <!-- Error State -->
+        <div id="error" class="hidden bg-red-50 p-8 rounded-[32px] text-center border border-red-100">
+            <p class="text-red-500 font-bold mb-2">無法讀取運動紀錄</p>
+            <p class="text-red-400 text-sm">請確認您已登入 SportPal 並擁有有效的雲端紀錄。</p>
         </div>
     </div>
 
-    <script>
-        // 1. Firebase 配置
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, getDocs, query, where, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
         const firebaseConfig = {
-            projectId: "sportpal-4a832",
-            appId: "1:372993120423:web:6d774cfc44347d18caa382",
-            apiKey: "AIzaSyBCdjshfIrRehSDxIDjUxyW-XtjZolALzU",
             authDomain: "sportpal-4a832.firebaseapp.com",
-            storageBucket: "sportpal-4a832.firebasestorage.app"
+            projectId: "sportpal-4a832",
+            storageBucket: "sportpal-4a832.appspot.com",
+            messagingSenderId: "81251874995",
+            appId: "1:81251874995:web:757367468160c878931168"
         };
 
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
 
-        let distChart = null;
-        let durChart = null;
+        let distChart, durChart;
 
-        async function fetchData() {
-            const email = document.getElementById('emailInput').value.trim();
-            const btn = document.getElementById('searchBtn');
-            const status = document.getElementById('statusText');
-
-            if (!email) { alert("請輸入 Gmail 帳號"); return; }
-
-            btn.disabled = true;
-            btn.innerHTML = "讀取中...";
-            status.innerHTML = "正在從雲端同步數據...";
-
-            try {
-                // 嘗試匿名登入 (若 Firebase 未開啟匿名登入則安全跳過)
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
                 try {
-                    await firebase.auth().signInAnonymously();
-                } catch (authErr) {
-                    console.warn("匿名登入跳過 (使用公開讀取規則):", authErr.message);
+                    const q = query(
+                        collection(db, "sport_records"),
+                        where("userId", "==", user.uid),
+                        orderBy("timestamp", "asc")
+                    );
+                    const querySnapshot = await getDocs(q);
+                    const records = [];
+                    querySnapshot.forEach((doc) => records.push(doc.data()));
+                    
+                    document.getElementById('loading').classList.add('hidden');
+                    processAndRender(records);
+                } catch (err) {
+                    console.error("Error fetching records:", err);
+                    document.getElementById('loading').classList.add('hidden');
+                    document.getElementById('error').classList.remove('hidden');
                 }
-
-                // 查詢資料 (相容大小寫 Email)
-                let querySnapshot = await db.collection('sport_records').where('userEmail', '==', email).get();
-
-                if (querySnapshot.empty && email !== email.toLowerCase()) {
-                    querySnapshot = await db.collection('sport_records').where('userEmail', '==', email.toLowerCase()).get();
-                }
-
-                if (querySnapshot.empty) {
-                    status.innerHTML = "找不到該帳號的運動紀錄 (" + email + ")";
-                    btn.disabled = false;
-                    btn.innerHTML = "查詢統計";
-                    document.getElementById('summaryCards').classList.add('hidden');
-                    return;
-                }
-
-                const records = [];
-                querySnapshot.forEach(doc => records.push(doc.data()));
-
-                processAndRender(records);
-                status.innerHTML = "數據已成功更新！查詢帳號：" + email;
-            } catch (err) {
-                console.error(err);
-                status.innerHTML = "查詢失敗: " + err.message;
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = "查詢統計";
+            } else {
+                document.getElementById('loading').innerHTML = '<p class="text-gray-400 font-bold tracking-widest uppercase text-xs">請從主程式登入以檢視紀錄</p>';
             }
-        }
+        });
 
         function processAndRender(records) {
             const now = new Date();
             const currentYear = now.getFullYear();
             const months = [];
-            // 生成當前年份 1 ~ 12 月
             for (let i = 0; i < 12; i++) {
                 months.push({
                     label: (i + 1) + "月",
@@ -154,13 +135,9 @@
             let totalCount = 0;
 
             records.forEach(rec => {
-                // 優先使用 timestamp，若無則使用 date
                 const recDate = new Date(rec.timestamp || rec.date);
-                
-                // 只統計當前年度的數據
                 if (recDate.getFullYear() === currentYear) {
                     const monthIndex = recDate.getMonth();
-
                     const dist = Number(rec.distance) || 0;
                     const dur = Number(rec.duration) || 0;
 
@@ -169,7 +146,6 @@
                         months[monthIndex].duration += dur;
                         months[monthIndex].count += 1;
                         
-                        // 累加年度總計
                         totalDist += dist;
                         totalDur += dur;
                         totalCount += 1;
@@ -177,51 +153,47 @@
                 }
             });
 
-            renderSummaryCards(totalDist, totalDur, totalCount);
+            renderStats(totalDist, totalDur, totalCount);
             renderCharts(months);
         }
 
-        function renderSummaryCards(dist, dur, count) {
-            const container = document.getElementById('summaryCards');
+        function renderStats(dist, dur, count) {
+            const container = document.getElementById('statsSummary');
             container.classList.remove('hidden');
-
             const hours = (dur / 60).toFixed(1);
             const avgDist = (dist / 12).toFixed(1);
 
             container.innerHTML = `
                 <div class="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm text-center">
                     <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">年度累積距離</div>
-                    <div class="text-2xl font-black text-blue-600">${dist.toFixed(1)} <span class="text-xs text-gray-400">km</span></div>
+                    <div class="text-2xl font-black text-blue-600">\${dist.toFixed(1)} <span class="text-xs text-gray-400">km</span></div>
                 </div>
                 <div class="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm text-center">
                     <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">年度總運動時間</div>
-                    <div class="text-2xl font-black text-emerald-600">${hours} <span class="text-xs text-gray-400">hrs</span></div>
+                    <div class="text-2xl font-black text-emerald-600">\${hours} <span class="text-xs text-gray-400">hrs</span></div>
                 </div>
                 <div class="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm text-center">
                     <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">年度運動次數</div>
-                    <div class="text-2xl font-black text-purple-600">${count} <span class="text-xs text-gray-400">次</span></div>
+                    <div class="text-2xl font-black text-purple-600">\${count} <span class="text-xs text-gray-400">次</span></div>
                 </div>
                 <div class="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm text-center">
-                    <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">月均里程</div>
-                    <div class="text-2xl font-black text-amber-500">${avgDist} <span class="text-xs text-gray-400">km/月</span></div>
+                    <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">月平均表現</div>
+                    <div class="text-2xl font-black text-orange-500">\${avgDist} <span class="text-xs text-gray-400">km</span></div>
                 </div>
             `;
         }
 
-        function renderCharts(data) {
-            const labels = data.map(m => m.label);
-            const distData = data.map(m => m.distance.toFixed(1));
-            const durData = data.map(m => m.duration);
-
-            if (distChart) distChart.destroy();
-            if (durChart) durChart.destroy();
+        function renderCharts(months) {
+            const labels = months.map(m => m.label);
+            const distData = months.map(m => m.distance);
+            const durData = months.map(m => m.duration);
 
             const commonOptions = {
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: { legend: { display: false } },
                 scales: {
-                    y: { beginAtZero: true, grid: { color: '#f3f4f6' } },
+                    y: { beginAtZero: true, grid: { color: '#f1f5f9' }, border: { display: false } },
                     x: { grid: { display: false } }
                 }
             };
@@ -251,6 +223,21 @@
                     datasets: [{
                         data: durData,
                         borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        borderWidth: 3,
+                        pointRadius: 4,
+                        pointBackgroundColor: '#10b981'
+                    }]
+                },
+                options: commonOptions
+            });
+        }
+    </script>
+</body>
+</html>
+          borderColor: '#10b981',
                         backgroundColor: 'rgba(16, 185, 129, 0.1)',
                         fill: true,
                         tension: 0.4,

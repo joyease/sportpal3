@@ -180,7 +180,7 @@ export default function App() {
   const renderContent = () => {
     switch (activeTab) {
       case 'home':
-        return <Home onSelectTab={(tab) => setActiveTab(tab as TabType)} />;
+        return <Home onSelectTab={(tab) => setActiveTab(tab as Page)} />;
       case 'checkin':
         return <CheckIn onSave={handleSaveCheckIn} />;
       case 'records':

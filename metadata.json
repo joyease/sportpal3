@@ -1,6 +1,6 @@
 {
-  "name": "愛動咖 SportPal",
-  "description": "SportPal: 台灣小百岳、368鄉鎮、旅遊打卡與運動紀錄的行動好夥伴。",
+  "name": "SportPal 3 年度版",
+  "description": "SportPal v3 - 支援 1~12 月年度運動趨勢圖表與補錄日期功能。",
   "requestFramePermissions": ["geolocation"],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
