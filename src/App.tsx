@@ -7,15 +7,18 @@ import { useState, useEffect } from 'react';
 import { Home } from './components/Home';
 import { CheckIn } from './components/CheckIn';
 import { Records } from './components/Records';
+import { HistoryTrend } from './components/HistoryTrend';
+import { TravelMap } from './components/TravelMap';
+import { FlagCollector } from './components/FlagCollector';
+import { FlagMapView } from './components/FlagMapView';
 import { Navigation } from './components/Navigation';
 import { LoginModal } from './components/LoginModal';
-import { TravelMap } from './components/TravelMap';
-import { User, CheckIn as CheckInData, SportRecord, Page } from './types';
+import { User, CheckIn as CheckInData, SportRecord, Page, FlagMark } from './types';
 import { motion, AnimatePresence } from 'motion/react';
-import { LogOut, User as UserIcon, Mail, ShieldCheck, Loader2 } from 'lucide-react';
+import { LogOut, User as UserIcon, Mail, Loader2 } from 'lucide-react';
 import { auth, db, googleProvider, handleFirestoreError, OperationType } from './lib/firebase';
 import { signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth';
-import { doc, getDoc, setDoc, collection, query, where, onSnapshot, addDoc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { doc, setDoc, collection, query, where, onSnapshot, deleteDoc } from 'firebase/firestore';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<Page>('home');
@@ -28,6 +31,7 @@ export default function App() {
   // Real Data State
   const [checkIns, setCheckIns] = useState<CheckInData[]>([]);
   const [sportRecords, setSportRecords] = useState<SportRecord[]>([]);
+  const [flagMarks, setFlagMarks] = useState<FlagMark[]>([]);
 
   // Auth Listener
   useEffect(() => {
@@ -91,13 +95,51 @@ export default function App() {
     return () => unsubscribe();
   }, [isLoggedIn, user]);
 
+  // Firestore Sync - FlagMarks
+  useEffect(() => {
+    if (!isLoggedIn || !user) return;
+
+    const q = query(collection(db, 'flag_marks'), where('userId', '==', user.id));
+    const unsubscribe = onSnapshot(q, 
+      (snapshot) => {
+        const data = snapshot.docs.map(doc => doc.data() as FlagMark);
+        setFlagMarks(data);
+      },
+      (error) => handleFirestoreError(error, OperationType.LIST, 'flag_marks')
+    );
+    return () => unsubscribe();
+  }, [isLoggedIn, user]);
+
   const handleTabChange = (tab: string) => {
     const page = tab as Page;
-    if ((page === 'checkin' || page === 'records') && !isLoggedIn) {
+    if ((page === 'checkin' || page === 'records' || page === 'map' || page === 'flags') && !isLoggedIn) {
       setPendingTab(page);
       setIsLoginModalOpen(true);
     } else {
       setActiveTab(page);
+    }
+  };
+
+  const handleToggleFlagMark = async (countryId: string, visited: boolean) => {
+    if (!user) return;
+    const path = 'flag_marks';
+    const markId = `${user.id}_${countryId}`;
+    try {
+      const docRef = doc(db, path, markId);
+      if (visited) {
+        await setDoc(docRef, {
+          id: markId,
+          userId: user.id,
+          userEmail: user.email.toLowerCase(),
+          countryId,
+          visited: true,
+          timestamp: Date.now()
+        });
+      } else {
+        await deleteDoc(docRef);
+      }
+    } catch (error) {
+      handleFirestoreError(error, OperationType.WRITE, path);
     }
   };
 
@@ -169,6 +211,15 @@ export default function App() {
     }
   };
 
+  const handleDeleteRecord = async (recordId: string) => {
+    if (!user) return;
+    try {
+      await deleteDoc(doc(db, 'sport_records', recordId));
+    } catch (error) {
+      handleFirestoreError(error, OperationType.DELETE, `sport_records/${recordId}`);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#0A0A0A]">
@@ -180,13 +231,33 @@ export default function App() {
   const renderContent = () => {
     switch (activeTab) {
       case 'home':
-        return <Home onSelectTab={(tab) => setActiveTab(tab as Page)} />;
+        return <Home onSelectTab={(tab) => setActiveTab(tab as Page)} user={user} />;
       case 'checkin':
         return <CheckIn onSave={handleSaveCheckIn} />;
       case 'records':
-        return <Records history={sportRecords} onSave={handleSaveRecord} />;
+        return <Records history={sportRecords} onSave={handleSaveRecord} onDelete={handleDeleteRecord} />;
       case 'map':
-        return <TravelMap />;
+        return <TravelMap onBack={() => setActiveTab('home')} />;
+      case 'flags':
+        return (
+          <FlagCollector 
+            marks={flagMarks} 
+            onToggleMark={handleToggleFlagMark} 
+            isLoggedIn={isLoggedIn}
+            onLoginRequest={() => setIsLoginModalOpen(true)}
+            onBack={() => setActiveTab('home')}
+          />
+        );
+      case 'flag_map':
+        return (
+          <FlagMapView 
+            onBack={() => setActiveTab('home')}
+            userMarks={flagMarks}
+            currentUserEmail={user?.email}
+          />
+        );
+      case 'trend':
+        return <HistoryTrend records={sportRecords} onBack={() => setActiveTab('home')} onDeleteRecord={handleDeleteRecord} />;
       case 'profile':
         return (
           <div className="p-8 flex flex-col gap-8 bg-[#0A0A0A] min-h-screen">
@@ -254,7 +325,7 @@ export default function App() {
           </div>
         );
       default:
-        return <Home />;
+        return <Home onSelectTab={(tab) => setActiveTab(tab as Page)} user={user} />;
     }
   };
 

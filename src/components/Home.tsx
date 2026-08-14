@@ -9,6 +9,9 @@ import townshipsBanner from '../assets/images/taiwan_townships_banner_1786595556
 import travelBanner from '../assets/images/travel_checkin_banner_1786595567526.jpg';
 import historyBanner from '../assets/images/sports_record_banner_1786595579220.jpg';
 
+import { User as UserIcon } from 'lucide-react';
+import { User } from '../types';
+
 const SECTIONS = [
   {
     id: 'mountains',
@@ -20,13 +23,13 @@ const SECTIONS = [
     link: 'https://joyease.github.io/mymap/2608small100hills.html',
   },
   {
-    id: 'townships',
-    title: '台灣368鄉鎮',
-    eyebrow: 'EXPLORE LOCAL',
-    color: '#4FACFE',
-    desc: '深入走訪每一個鄉鎮，發掘隱藏在角落的文化與美景。',
+    id: 'flag_map',
+    title: '旅遊集國旗',
+    eyebrow: 'WORLD FLAG COLLECTION',
+    color: '#FFD700',
+    desc: '環遊世界，收集每一個造訪國家的國旗，點亮您的全球足跡。',
     image: townshipsBanner,
-    link: 'https://joyease.github.io/game/2603taiwanlight.html',
+    link: '#',
   },
   {
     id: 'travel',
@@ -50,9 +53,10 @@ const SECTIONS = [
 
 interface HomeProps {
   onSelectTab?: (tab: string) => void;
+  user: User | null;
 }
 
-export function Home({ onSelectTab }: HomeProps) {
+export function Home({ onSelectTab, user }: HomeProps) {
   return (
     <div className="flex flex-col bg-[#0A0A0A] min-h-screen pb-32">
       <header className="h-20 flex justify-between items-center px-8 bg-[#121212] border-b border-white/10 shrink-0">
@@ -64,18 +68,35 @@ export function Home({ onSelectTab }: HomeProps) {
             SportPal <span className="text-[#FF512F]">愛動咖</span>
           </span>
         </div>
-        <div className="text-xs font-mono text-gray-200 tracking-widest uppercase hidden sm:block">
-          sportpal.hermann.tw
+        
+        <div className="flex items-center gap-3">
+          {user ? (
+            <div 
+              className="w-10 h-10 rounded-full border-2 border-[#FF512F] overflow-hidden cursor-pointer hover:scale-105 transition-all shadow-lg shadow-[#FF512F]/20"
+              onClick={() => onSelectTab?.('profile')}
+            >
+              <img src={user.picture} alt={user.name} className="w-full h-full object-cover" />
+            </div>
+          ) : (
+            <button 
+              onClick={() => onSelectTab?.('profile')}
+              className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition-all"
+            >
+              <UserIcon className="w-5 h-5" />
+            </button>
+          )}
         </div>
       </header>
 
       <main className="flex-1 flex flex-col">
         {SECTIONS.map((section, index) => {
-          if (section.id === 'travel' && onSelectTab) {
+          if ((section.id === 'flag_map' || section.id === 'travel' || section.id === 'history') && onSelectTab) {
+            const targetTab = section.id === 'flag_map' ? 'flag_map' : 
+                            section.id === 'travel' ? 'map' : 'trend';
             return (
               <motion.div
                 key={section.id}
-                onClick={() => onSelectTab('map')}
+                onClick={() => onSelectTab(targetTab)}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: index * 0.1 }}

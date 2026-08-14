@@ -5,6 +5,7 @@ import {defineConfig} from 'vite';
 
 export default defineConfig(() => {
   return {
+    base: '/sportpal3/', // Required for GitHub Pages deployment to joyease.github.io/sportpal3/
     plugins: [react(), tailwindcss()],
     resolve: {
       alias: {

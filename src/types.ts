@@ -35,4 +35,12 @@ export interface SportRecord {
   timestamp: number;
 }
 
-export type Page = 'home' | 'checkin' | 'records' | 'profile' | 'map';
+export interface FlagMark {
+  id: string;
+  userId: string;
+  countryId: string;
+  visited: boolean;
+  timestamp: number;
+}
+
+export type Page = 'home' | 'checkin' | 'records' | 'profile' | 'trend' | 'map' | 'flags' | 'flag_map';

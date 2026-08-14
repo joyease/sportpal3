@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Home as HomeIcon, MapPin, ClipboardList, User as UserIcon, Map as MapIcon } from 'lucide-react';
+import { Home as HomeIcon, MapPin, ClipboardList, User as UserIcon, Map as MapIcon, Flag } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { motion } from 'motion/react';
 
@@ -16,7 +16,7 @@ type NavItem = {
 const ITEMS: NavItem[] = [
   { id: 'home', label: '首頁', icon: HomeIcon },
   { id: 'checkin', label: '打卡', icon: MapPin },
-  { id: 'map', label: '地圖', icon: MapIcon },
+  { id: 'flags', label: '集國旗', icon: Flag },
   { id: 'records', label: '紀錄', icon: ClipboardList },
   { id: 'profile', label: '我的', icon: UserIcon },
 ];

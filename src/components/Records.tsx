@@ -4,15 +4,16 @@
  */
 
 import { useState, FormEvent } from 'react';
-import { ClipboardList, Save, History, TrendingUp, Clock, Map, Calendar } from 'lucide-react';
+import { ClipboardList, Save, History, TrendingUp, Clock, Map, Calendar, Trash2 } from 'lucide-react';
 import { motion } from 'motion/react';
 
 interface RecordsProps {
   onSave: (record: { type: string; duration: number; distance?: number; notes: string; timestamp?: number }) => void;
+  onDelete?: (recordId: string) => Promise<void>;
   history: any[];
 }
 
-export function Records({ onSave, history }: RecordsProps) {
+export function Records({ onSave, onDelete, history }: RecordsProps) {
   const [type, setType] = useState('跑步');
   const [duration, setDuration] = useState('');
   const [distance, setDistance] = useState('');
@@ -94,7 +95,7 @@ export function Records({ onSave, history }: RecordsProps) {
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-3">
             <label className="text-xs font-black text-gray-200 uppercase tracking-[0.3em] ml-2 flex items-center gap-2">
-              <Clock className="w-3.5 h-3.5 text-[#00F2FE]" /> 時間 (MIN)
+              <Clock className="w-3.5 h-3.5 text-[#00F2FE]" /> 時間 (HRS)
             </label>
             <input
               type="number"
@@ -173,9 +174,24 @@ export function Records({ onSave, history }: RecordsProps) {
                     <p className="text-xs font-mono text-gray-300 uppercase tracking-wider">{new Date(item.timestamp).toLocaleDateString()}</p>
                   </div>
                 </div>
-                <div className="text-right">
-                  <div className="text-lg font-black text-[#00F2FE] tracking-tighter">{item.duration}<span className="text-xs font-mono ml-1 text-gray-300">M</span></div>
-                  {item.distance && <div className="text-xs font-mono text-gray-200 uppercase tracking-tighter">{item.distance} KM</div>}
+                <div className="flex items-center gap-4">
+                  <div className="text-right">
+                    <div className="text-lg font-black text-[#00F2FE] tracking-tighter">{item.duration}<span className="text-xs font-mono ml-1 text-gray-300">HRS</span></div>
+                    {item.distance && <div className="text-xs font-mono text-gray-200 uppercase tracking-tighter">{item.distance} KM</div>}
+                  </div>
+                  {onDelete && item.id && (
+                    <button
+                      onClick={() => {
+                        if (window.confirm('確定要刪除此筆紀錄嗎？')) {
+                          onDelete(item.id);
+                        }
+                      }}
+                      className="p-2 text-gray-500 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-all"
+                      title="刪除紀錄"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  )}
                 </div>
               </motion.div>
             ))
