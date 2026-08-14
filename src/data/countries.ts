@@ -140,7 +140,7 @@ export const COUNTRIES: Country[] = [
   { id: 'mo', name: '澳門', continent: '亞洲' },
   { id: 'tw', name: '台灣', continent: '亞洲' },
   { id: 'no', name: '挪威', continent: '歐洲', rank: 32 },
-  { id: 'su', name: '蘇聯', continent: '歐洲' },
+  { id: 'ru', name: '俄羅斯', continent: '歐洲' },
 ];
 
 export const CONTINENTS = ['亞洲', '歐洲', '北美洲', '南美洲', '非洲', '大洋洲'];
