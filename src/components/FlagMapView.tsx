@@ -94,6 +94,30 @@ export function FlagMapView({ onBack, userMarks, currentUserEmail }: FlagMapView
         </div>
       </header>
 
+      {/* Search Area - Now Above Map */}
+      <div className="p-4 bg-[#121212] border-b border-white/10">
+        <form onSubmit={handleSearch} className="flex gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input 
+              type="email"
+              required
+              value={searchEmail}
+              onChange={(e) => setSearchEmail(e.target.value)}
+              placeholder="輸入 Email 查詢好友足跡"
+              className="w-full bg-[#0A0A0A] border border-white/10 rounded-2xl py-3 pl-12 pr-4 text-sm text-white focus:border-[#FFD700] outline-none"
+            />
+          </div>
+          <button 
+            type="submit"
+            disabled={isSearching}
+            className="px-6 bg-[#FFD700] text-black font-black rounded-2xl transition-all flex items-center justify-center disabled:opacity-50"
+          >
+            {isSearching ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+          </button>
+        </form>
+      </div>
+
       {/* Map Section */}
       <div className="h-[40vh] relative border-b border-white/10 z-0 overflow-hidden">
         <MapContainer 
@@ -115,30 +139,6 @@ export function FlagMapView({ onBack, userMarks, currentUserEmail }: FlagMapView
             />
           )}
         </MapContainer>
-        
-        {/* Floating Search overlay */}
-        <div className="absolute top-4 left-4 right-4 z-[1000]">
-          <form onSubmit={handleSearch} className="flex gap-2">
-            <div className="relative flex-1">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input 
-                type="email"
-                required
-                value={searchEmail}
-                onChange={(e) => setSearchEmail(e.target.value)}
-                placeholder="輸入 Email 查詢好友足跡"
-                className="w-full bg-[#121212]/95 backdrop-blur-xl border border-white/10 rounded-2xl py-3 pl-12 pr-4 text-sm text-white focus:border-[#FFD700] outline-none shadow-2xl"
-              />
-            </div>
-            <button 
-              type="submit"
-              disabled={isSearching}
-              className="px-6 bg-[#FFD700] text-black font-black rounded-2xl transition-all flex items-center justify-center disabled:opacity-50"
-            >
-              {isSearching ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
-            </button>
-          </form>
-        </div>
       </div>
 
       {/* Visited List */}

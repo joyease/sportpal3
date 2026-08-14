@@ -8,8 +8,8 @@ import mountainsBanner from '../assets/images/taiwan_mountains_banner_1786595545
 import townshipsBanner from '../assets/images/taiwan_townships_banner_1786595556925.jpg';
 import travelBanner from '../assets/images/travel_checkin_banner_1786595567526.jpg';
 import historyBanner from '../assets/images/sports_record_banner_1786595579220.jpg';
+import sportpalAvatarIcon from '../assets/images/sportpal_avatar_icon_1786697460164.jpg';
 
-import { User as UserIcon } from 'lucide-react';
 import { User } from '../types';
 
 const SECTIONS = [
@@ -18,6 +18,7 @@ const SECTIONS = [
     title: '台灣小百岳',
     eyebrow: 'TOP 100 PEAKS',
     color: '#FF512F',
+    bgColor: 'rgba(95, 15, 15, 0.75)', // 勃根地紅
     desc: '挑戰台灣巔峰時刻。',
     image: mountainsBanner,
     link: 'https://joyease.github.io/mymap/2608small100hills.html',
@@ -27,6 +28,7 @@ const SECTIONS = [
     title: '日本47地通',
     eyebrow: 'JAPAN EXPLORER',
     color: '#FF5E62',
+    bgColor: 'rgba(95, 45, 15, 0.75)', // 深琥珀橙
     desc: '探索日本各地區魅力地圖。',
     image: travelBanner,
     link: 'https://joyease.github.io/game/2603LightJP.html',
@@ -36,6 +38,7 @@ const SECTIONS = [
     title: '旅遊集國旗',
     eyebrow: 'WORLD FLAG COLLECTION',
     color: '#FFD700',
+    bgColor: 'rgba(75, 45, 25, 0.75)', // 咖啡棕
     desc: '收集各國國旗，點亮全球足跡。',
     image: townshipsBanner,
     link: '#',
@@ -45,6 +48,7 @@ const SECTIONS = [
     title: '旅遊打卡地圖',
     eyebrow: 'ADVENTURE MAP',
     color: '#F9D423',
+    bgColor: 'rgba(15, 75, 35, 0.75)', // 森林綠
     desc: '紀錄旅程足跡與推薦行程。',
     image: travelBanner,
     link: 'https://aidusu.github.io/3kingdom/260517trackin2.html',
@@ -54,6 +58,7 @@ const SECTIONS = [
     title: '全年運動歷程',
     eyebrow: 'ACTIVITY LOG',
     color: '#00F2FE',
+    bgColor: 'rgba(15, 35, 95, 0.75)', // 午夜藍
     desc: '見證一年來的汗水與成就。',
     image: historyBanner,
     link: 'https://sportpal-4a832.web.app/260813historytrend.html',
@@ -63,6 +68,7 @@ const SECTIONS = [
     title: '運動點亮台灣',
     eyebrow: 'LIGHT UP TAIWAN',
     color: '#FFD700',
+    bgColor: 'rgba(65, 15, 95, 0.75)', // 深羅蘭紫
     desc: '用運動點亮台灣地圖。',
     image: mountainsBanner,
     link: 'https://www.mysports.net.tw/mHealthWebportal/event/2603LightTW3.html',
@@ -92,20 +98,20 @@ export function Home({ onSelectTab, user }: HomeProps) {
             href="https://sportpal.hermann.tw/" 
             target="_blank" 
             rel="noopener noreferrer"
-            className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden hover:bg-white/10 hover:border-white/20 transition-all shadow-lg active:scale-95"
-            title="前往 SportPal"
+            className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 hover:border-[#FF512F]/40 transition-all shadow-lg active:scale-95 group"
+            title="前往愛動咖官網"
           >
-            <img 
-              src="https://sportpal.hermann.tw/favicon.ico" 
-              alt="SportPal Icon" 
-              className="w-6 h-6 object-contain"
-              onError={(e) => {
-                // Fallback to a user icon if favicon is not found
-                e.currentTarget.style.display = 'none';
-                e.currentTarget.parentElement?.classList.add('flex');
-              }}
-            />
-            <UserIcon className="w-5 h-5 text-gray-400 hidden" />
+            <div className="w-8 h-8 rounded-full overflow-hidden border border-[#FF512F]/60 shrink-0 bg-[#1A1A1A]">
+              <img 
+                src={sportpalAvatarIcon} 
+                alt="愛動咖 SportPal 官網" 
+                referrerPolicy="no-referrer"
+                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+              />
+            </div>
+            <span className="text-xs font-bold text-gray-200 group-hover:text-white tracking-wider">
+              關於
+            </span>
           </a>
         </div>
       </header>
@@ -121,7 +127,11 @@ export function Home({ onSelectTab, user }: HomeProps) {
                 alt={section.title}
                 className="absolute inset-0 w-full h-full object-cover opacity-30 group-hover:scale-105 transition-transform duration-700"
               />
-              <div className="absolute inset-0 bg-gradient-to-r from-black via-black/60 to-transparent" />
+              <div 
+                className="absolute inset-0 transition-colors duration-500" 
+                style={{ backgroundColor: (section as any).bgColor }}
+              />
+              <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-transparent to-transparent" />
               
               <div className="relative z-10 flex flex-col">
                 <span 
@@ -150,7 +160,7 @@ export function Home({ onSelectTab, user }: HomeProps) {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: index * 0.1 }}
-                className="group relative flex-1 min-h-[130px] border-b border-white/5 overflow-hidden cursor-pointer flex flex-col justify-center px-8 md:px-16"
+                className="group relative flex-1 min-h-[90px] border-b border-white/5 overflow-hidden cursor-pointer flex flex-col justify-center px-8 md:px-16"
               >
                 {Content}
               </motion.div>
@@ -166,7 +176,7 @@ export function Home({ onSelectTab, user }: HomeProps) {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: index * 0.1 }}
-              className="group relative flex-1 min-h-[130px] border-b border-white/5 overflow-hidden cursor-pointer flex flex-col justify-center px-8 md:px-16"
+              className="group relative flex-1 min-h-[90px] border-b border-white/5 overflow-hidden cursor-pointer flex flex-col justify-center px-8 md:px-16"
             >
               {Content}
             </motion.a>

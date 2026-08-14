@@ -136,7 +136,11 @@ export const COUNTRIES: Country[] = [
   { id: 'ao', name: '安哥拉', continent: '非洲', rank: 116 },
   
   // Special Add (Taiwan)
+  { id: 'hk', name: '香港', continent: '亞洲' },
+  { id: 'mo', name: '澳門', continent: '亞洲' },
   { id: 'tw', name: '台灣', continent: '亞洲' },
+  { id: 'no', name: '挪威', continent: '歐洲', rank: 32 },
+  { id: 'su', name: '蘇聯', continent: '歐洲' },
 ];
 
 export const CONTINENTS = ['亞洲', '歐洲', '北美洲', '南美洲', '非洲', '大洋洲'];

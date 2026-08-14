@@ -161,6 +161,9 @@ export function FlagCollector({ marks, onToggleMark, isLoggedIn, onLoginRequest,
                       alt={country.name}
                       className="w-full h-full object-cover"
                       loading="lazy"
+                      onError={(e) => {
+                        e.currentTarget.src = `https://placehold.co/80x53/1a1a1a/ffffff?text=${country.id.toUpperCase()}`;
+                      }}
                     />
                   </div>
                   <div>
