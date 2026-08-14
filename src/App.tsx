@@ -279,13 +279,17 @@ export default function App() {
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-gradient-to-br from-[#FF512F] to-[#DD2476] rounded-[32px] p-8 text-white shadow-xl shadow-[#FF512F]/10">
-                    <div className="text-xs font-black uppercase tracking-widest text-white/90 mb-2">打卡</div>
+                  <div className="col-span-2 bg-gradient-to-br from-[#FF512F] to-[#DD2476] rounded-[32px] p-8 text-white shadow-xl shadow-[#FF512F]/10">
+                    <div className="text-xs font-black uppercase tracking-widest text-white/90 mb-2">打卡筆數</div>
                     <div className="text-4xl font-black tracking-tighter">{checkIns.length}</div>
                   </div>
                   <div className="bg-[#121212] border border-white/5 rounded-[32px] p-8 text-white">
-                    <div className="text-xs font-black uppercase tracking-widest text-gray-200 mb-2">紀錄</div>
+                    <div className="text-xs font-black uppercase tracking-widest text-gray-200 mb-2">記運動筆數</div>
                     <div className="text-4xl font-black tracking-tighter">{sportRecords.length}</div>
+                  </div>
+                  <div className="bg-[#121212] border border-white/5 rounded-[32px] p-8 text-white">
+                    <div className="text-xs font-black uppercase tracking-widest text-gray-200 mb-2">集國徽筆數</div>
+                    <div className="text-4xl font-black tracking-tighter">{Object.keys(flagMarks).length}</div>
                   </div>
                 </div>
 

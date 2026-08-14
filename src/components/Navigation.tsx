@@ -17,7 +17,7 @@ const ITEMS: NavItem[] = [
   { id: 'home', label: '首頁', icon: HomeIcon },
   { id: 'checkin', label: '打卡', icon: MapPin },
   { id: 'flags', label: '集國旗', icon: Flag },
-  { id: 'records', label: '紀錄', icon: ClipboardList },
+  { id: 'records', label: '記運動', icon: ClipboardList },
   { id: 'profile', label: '我的', icon: UserIcon },
 ];
 
