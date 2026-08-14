@@ -1,0 +1,38 @@
+{
+  "collections": [
+    {
+      "name": "users",
+      "fields": [
+        { "name": "id", "type": "string" },
+        { "name": "email", "type": "string" },
+        { "name": "name", "type": "string" },
+        { "name": "picture", "type": "string" }
+      ]
+    },
+    {
+      "name": "check_ins",
+      "fields": [
+        { "name": "userId", "type": "string" },
+        { "name": "userEmail", "type": "string" },
+        { "name": "tripcode", "type": "string" },
+        { "name": "lat", "type": "number" },
+        { "name": "lng", "type": "number" },
+        { "name": "locationName", "type": "string" },
+        { "name": "notes", "type": "string" },
+        { "name": "timestamp", "type": "number" }
+      ]
+    },
+    {
+      "name": "sport_records",
+      "fields": [
+        { "name": "userId", "type": "string" },
+        { "name": "type", "type": "string" },
+        { "name": "duration", "type": "number" },
+        { "name": "distance", "type": "number" },
+        { "name": "notes", "type": "string" },
+        { "name": "date", "type": "string" },
+        { "name": "timestamp", "type": "number" }
+      ]
+    }
+  ]
+}
