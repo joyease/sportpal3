@@ -9,9 +9,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; color: #1e293b; }
-        .logo-font { font-family: 'Plus Jakarta Sans', sans-serif; }
         .chart-container { position: relative; height: 320px; width: 100%; }
-        .glass-card { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.3); }
+        .stat-card { transition: transform 0.2s; }
+        .stat-card:hover { transform: translateY(-4px); }
     </style>
 </head>
 <body class="p-4 md:p-10">
@@ -19,11 +19,10 @@
         <!-- Header -->
         <div class="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-6">
             <div>
-                <div class="inline-block px-3 py-1 bg-blue-50 text-blue-600 text-[10px] font-bold uppercase tracking-widest rounded-full mb-3">Statistics Dashboard</div>
-                <h1 class="logo-font text-4xl font-black text-gray-900 tracking-tight">年度運動趨勢</h1>
-                <p class="text-gray-500 mt-2 font-medium">1 ~ 12 月運動表現可視化數據分析</p>
+                <div class="inline-block px-3 py-1 bg-blue-50 text-blue-600 text-[10px] font-bold uppercase tracking-widest rounded-full mb-3">Statistics Dashboard 2026</div>
+                <h1 class="text-4xl font-black text-gray-900 tracking-tight">年度運動趨勢</h1>
+                <p class="text-gray-500 mt-2 font-medium">完整 1 ~ 12 月運動表現數據分析</p>
             </div>
-            
             <div class="flex items-center gap-4 bg-white/50 p-2 rounded-2xl border border-gray-100">
                 <div class="flex items-center gap-2 px-3 py-1.5 bg-white rounded-xl shadow-sm">
                     <div class="w-2.5 h-2.5 rounded-full bg-blue-500"></div>
@@ -39,16 +38,7 @@
         <!-- Loading State -->
         <div id="loading" class="flex flex-col items-center justify-center py-32 bg-white rounded-[40px] border border-dashed border-gray-200">
             <div class="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-            <p class="text-gray-400 font-bold tracking-[0.2em] uppercase text-[10px]">正在同步雲端運動數據...</p>
-        </div>
-
-        <!-- Error State -->
-        <div id="error" class="hidden bg-red-50 p-12 rounded-[40px] text-center border border-red-100">
-            <div class="w-16 h-16 bg-red-100 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-            </div>
-            <p class="text-red-600 font-black text-xl mb-2">無法讀取運動紀錄</p>
-            <p class="text-red-400 font-medium">請確認您已登入 SportPal 並同步數據。</p>
+            <p class="text-gray-400 font-bold tracking-[0.2em] uppercase text-[10px]">正在載入 2026 年度數據...</p>
         </div>
 
         <!-- Dashboard Content -->
@@ -62,10 +52,7 @@
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 <!-- Distance Chart -->
                 <div class="bg-white p-8 rounded-[40px] shadow-sm border border-gray-100">
-                    <div class="flex items-center justify-between mb-8">
-                        <h3 class="text-xs font-black text-gray-400 uppercase tracking-[0.2em]">每月運動距離 (km)</h3>
-                        <div id="totalDistLabel" class="text-xs font-bold text-blue-500 bg-blue-50 px-3 py-1 rounded-full">-- km</div>
-                    </div>
+                    <h3 class="text-xs font-black text-gray-400 uppercase tracking-[0.2em] mb-8">每月運動距離 (km)</h3>
                     <div class="chart-container">
                         <canvas id="distanceChart"></canvas>
                     </div>
@@ -73,20 +60,13 @@
 
                 <!-- Duration Chart -->
                 <div class="bg-white p-8 rounded-[40px] shadow-sm border border-gray-100">
-                    <div class="flex items-center justify-between mb-8">
-                        <h3 class="text-xs font-black text-gray-400 uppercase tracking-[0.2em]">每月運動時間 (min)</h3>
-                        <div id="totalDurLabel" class="text-xs font-bold text-emerald-500 bg-emerald-50 px-3 py-1 rounded-full">-- min</div>
-                    </div>
+                    <h3 class="text-xs font-black text-gray-400 uppercase tracking-[0.2em] mb-8">每月運動時間 (min)</h3>
                     <div class="chart-container">
                         <canvas id="durationChart"></canvas>
                     </div>
                 </div>
             </div>
         </div>
-
-        <footer class="mt-16 text-center">
-            <p class="text-[10px] font-bold text-gray-300 uppercase tracking-[0.3em]">SportPal Analytics &copy; 2026</p>
-        </footer>
     </div>
 
     <!-- Firebase SDKs -->
@@ -107,8 +87,6 @@
         const db = getFirestore(app);
         const auth = getAuth(app);
 
-        let distChart, durChart;
-
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 try {
@@ -121,14 +99,9 @@
                     const records = [];
                     querySnapshot.forEach((doc) => {
                         const data = doc.data();
-                        // 確保將 timestamp 轉為 Date 對象以便處理
-                        if (data.timestamp && data.timestamp.toDate) {
-                            data.dateObj = data.timestamp.toDate();
-                        } else if (data.timestamp) {
-                            data.dateObj = new Date(data.timestamp);
-                        } else if (data.date) {
-                            data.dateObj = new Date(data.date);
-                        }
+                        if (data.timestamp && data.timestamp.toDate) data.dateObj = data.timestamp.toDate();
+                        else if (data.timestamp) data.dateObj = new Date(data.timestamp);
+                        else if (data.date) data.dateObj = new Date(data.date);
                         records.push(data);
                     });
                     
@@ -136,92 +109,66 @@
                     document.getElementById('dashboard').classList.remove('hidden');
                     processAndRender(records);
                 } catch (err) {
-                    console.error("Error fetching records:", err);
-                    document.getElementById('loading').classList.add('hidden');
-                    document.getElementById('error').classList.remove('hidden');
+                    console.error("Fetch error:", err);
+                    document.getElementById('loading').innerHTML = '<p class="text-red-500 font-bold">數據載入失敗</p>';
                 }
             } else {
-                document.getElementById('loading').innerHTML = `
-                    <div class="text-center p-8">
-                        <div class="w-16 h-16 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
-                        </div>
-                        <p class="text-gray-900 font-black text-xl mb-2">尚未登入</p>
-                        <p class="text-gray-400 font-medium">請在 SportPal 主程式登入後再查看統計資訊。</p>
-                    </div>
-                `;
+                document.getElementById('loading').innerHTML = '<p class="text-gray-400 font-bold">請先登入 SportPal</p>';
             }
         });
 
         function processAndRender(records) {
-            // 使用 2026 年作為當前統計年度 (配合系統時間)
             const currentYear = 2026; 
-            const months = [];
-            for (let i = 0; i < 12; i++) {
-                months.push({
-                    label: (i + 1) + "月",
-                    distance: 0,
-                    duration: 0,
-                    count: 0
-                });
-            }
+            const months = Array.from({length: 12}, (_, i) => ({
+                label: (i + 1) + "月",
+                distance: 0,
+                duration: 0,
+                count: 0
+            }));
 
-            let totalDist = 0;
-            let totalDur = 0;
-            let totalCount = 0;
+            let totalDist = 0, totalDur = 0, totalCount = 0;
 
             records.forEach(rec => {
                 const recDate = rec.dateObj;
                 if (!recDate || isNaN(recDate.getTime())) return;
 
-                // 只統計 2026 年的數據
                 if (recDate.getFullYear() === currentYear) {
-                    const monthIndex = recDate.getMonth();
+                    const mIdx = recDate.getMonth();
                     const dist = parseFloat(rec.distance) || 0;
                     const dur = parseFloat(rec.duration) || 0;
 
-                    if (monthIndex >= 0 && monthIndex < 12) {
-                        months[monthIndex].distance += dist;
-                        months[monthIndex].duration += dur;
-                        months[monthIndex].count += 1;
-                        
-                        totalDist += dist;
-                        totalDur += dur;
-                        totalCount += 1;
-                    }
+                    months[mIdx].distance += dist;
+                    months[mIdx].duration += dur;
+                    months[mIdx].count += 1;
+                    
+                    totalDist += dist;
+                    totalDur += dur;
+                    totalCount += 1;
                 }
             });
 
-            renderStats(totalDist, totalDur, totalCount);
-            renderCharts(months);
-            
-            document.getElementById('totalDistLabel').innerText = totalDist.toFixed(1) + ' km';
-            document.getElementById('totalDurLabel').innerText = totalDur.toFixed(0) + ' min';
-        }
-
-        function renderStats(dist, dur, count) {
-            const container = document.getElementById('statsSummary');
-            const hours = (dur / 60).toFixed(1);
-            const avgDist = (dist / 12).toFixed(1);
-
-            container.innerHTML = `
-                <div class="bg-white p-6 rounded-[32px] border border-gray-100 shadow-sm transition-transform hover:scale-[1.02]">
-                    <div class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">年度累積里程</div>
-                    <div class="text-3xl font-black text-blue-600 tracking-tight">${dist.toFixed(1)} <span class="text-sm font-medium text-gray-400">km</span></div>
+            // 更新統計卡片
+            const hours = (totalDur / 60).toFixed(1);
+            document.getElementById('statsSummary').innerHTML = `
+                <div class="bg-white p-6 rounded-[32px] border border-gray-100 shadow-sm stat-card">
+                    <div class="text-[10px] font-bold text-gray-400 uppercase mb-2">年度累積里程</div>
+                    <div class="text-3xl font-black text-blue-600">${totalDist.toFixed(1)} <span class="text-xs font-medium text-gray-400">km</span></div>
                 </div>
-                <div class="bg-white p-6 rounded-[32px] border border-gray-100 shadow-sm transition-transform hover:scale-[1.02]">
-                    <div class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">年度總時數</div>
-                    <div class="text-3xl font-black text-emerald-600 tracking-tight">${hours} <span class="text-sm font-medium text-gray-400">hrs</span></div>
+                <div class="bg-white p-6 rounded-[32px] border border-gray-100 shadow-sm stat-card">
+                    <div class="text-[10px] font-bold text-gray-400 uppercase mb-2">年度總運動時間</div>
+                    <div class="text-3xl font-black text-emerald-600">${hours} <span class="text-xs font-medium text-gray-400">hrs</span></div>
                 </div>
-                <div class="bg-white p-6 rounded-[32px] border border-gray-100 shadow-sm transition-transform hover:scale-[1.02]">
-                    <div class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">年度運動次數</div>
-                    <div class="text-3xl font-black text-purple-600 tracking-tight">${count} <span class="text-sm font-medium text-gray-400">次</span></div>
+                <div class="bg-white p-6 rounded-[32px] border border-gray-100 shadow-sm stat-card">
+                    <div class="text-[10px] font-bold text-gray-400 uppercase mb-2">年度運動次數</div>
+                    <div class="text-3xl font-black text-purple-600">${totalCount} <span class="text-xs font-medium text-gray-400">次</span></div>
                 </div>
-                <div class="bg-white p-6 rounded-[32px] border border-gray-100 shadow-sm transition-transform hover:scale-[1.02]">
-                    <div class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">月均運動距離</div>
-                    <div class="text-3xl font-black text-orange-500 tracking-tight">${avgDist} <span class="text-sm font-medium text-gray-400">km</span></div>
+                <div class="bg-white p-6 rounded-[32px] border border-gray-100 shadow-sm stat-card">
+                    <div class="text-[10px] font-bold text-gray-400 uppercase mb-2">月均運動里程</div>
+                    <div class="text-3xl font-black text-orange-500">${(totalDist / 12).toFixed(1)} <span class="text-xs font-medium text-gray-400">km</span></div>
                 </div>
             `;
+
+            renderCharts(months);
         }
 
         function renderCharts(months) {
@@ -232,33 +179,14 @@
             const commonOptions = {
                 responsive: true,
                 maintainAspectRatio: false,
-                interaction: { intersect: false, mode: 'index' },
-                plugins: { 
-                    legend: { display: false },
-                    tooltip: {
-                        backgroundColor: '#1e293b',
-                        padding: 12,
-                        titleFont: { size: 14, weight: 'bold' },
-                        bodyFont: { size: 13 },
-                        cornerRadius: 12,
-                        displayColors: false
-                    }
-                },
+                plugins: { legend: { display: false } },
                 scales: {
-                    y: { 
-                        beginAtZero: true, 
-                        grid: { color: '#f1f5f9', drawBorder: false },
-                        ticks: { color: '#94a3b8', font: { size: 11, weight: '600' } }
-                    },
-                    x: { 
-                        grid: { display: false },
-                        ticks: { color: '#64748b', font: { size: 11, weight: '700' } }
-                    }
+                    y: { beginAtZero: true, grid: { color: '#f1f5f9' }, ticks: { color: '#94a3b8' } },
+                    x: { grid: { display: false }, ticks: { color: '#64748b' } }
                 }
             };
 
-            if (distChart) distChart.destroy();
-            distChart = new Chart(document.getElementById('distanceChart'), {
+            new Chart(document.getElementById('distanceChart'), {
                 type: 'line',
                 data: {
                     labels: labels,
@@ -266,30 +194,16 @@
                         label: '距離 (km)',
                         data: distData,
                         borderColor: '#3b82f6',
-                        backgroundColor: (context) => {
-                            const chart = context.chart;
-                            const {ctx, chartArea} = chart;
-                            if (!chartArea) return null;
-                            const gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
-                            gradient.addColorStop(0, 'rgba(59, 130, 246, 0)');
-                            gradient.addColorStop(1, 'rgba(59, 130, 246, 0.15)');
-                            return gradient;
-                        },
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
                         fill: true,
                         tension: 0.4,
-                        borderWidth: 4,
-                        pointRadius: 0,
-                        pointHoverRadius: 6,
-                        pointHoverBackgroundColor: '#3b82f6',
-                        pointHoverBorderColor: '#fff',
-                        pointHoverBorderWidth: 3
+                        borderWidth: 4
                     }]
                 },
                 options: commonOptions
             });
 
-            if (durChart) durChart.destroy();
-            durChart = new Chart(document.getElementById('durationChart'), {
+            new Chart(document.getElementById('durationChart'), {
                 type: 'line',
                 data: {
                     labels: labels,
@@ -297,23 +211,10 @@
                         label: '時間 (min)',
                         data: durData,
                         borderColor: '#10b981',
-                        backgroundColor: (context) => {
-                            const chart = context.chart;
-                            const {ctx, chartArea} = chart;
-                            if (!chartArea) return null;
-                            const gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
-                            gradient.addColorStop(0, 'rgba(16, 185, 129, 0)');
-                            gradient.addColorStop(1, 'rgba(16, 185, 129, 0.15)');
-                            return gradient;
-                        },
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
                         fill: true,
                         tension: 0.4,
-                        borderWidth: 4,
-                        pointRadius: 0,
-                        pointHoverRadius: 6,
-                        pointHoverBackgroundColor: '#10b981',
-                        pointHoverBorderColor: '#fff',
-                        pointHoverBorderWidth: 3
+                        borderWidth: 4
                     }]
                 },
                 options: commonOptions
