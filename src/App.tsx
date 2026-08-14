@@ -257,7 +257,7 @@ export default function App() {
           />
         );
       case 'trend':
-        return <HistoryTrend records={sportRecords} onBack={() => setActiveTab('home')} onDeleteRecord={handleDeleteRecord} />;
+        return <HistoryTrend records={sportRecords} currentUserEmail={user?.email} onBack={() => setActiveTab('home')} onDeleteRecord={handleDeleteRecord} />;
       case 'profile':
         return (
           <div className="p-8 flex flex-col gap-8 bg-[#0A0A0A] min-h-screen">

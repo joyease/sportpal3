@@ -3,8 +3,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { SportRecord } from '../types';
+import { db, handleFirestoreError, OperationType } from '../lib/firebase';
+import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
 import { 
   Chart as ChartJS, 
   CategoryScale, 
@@ -18,7 +20,7 @@ import {
   ChartOptions
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
-import { ChevronLeft, Calendar, Activity, TrendingUp, Search, Info, Trash2 } from 'lucide-react';
+import { ChevronLeft, Calendar, Activity, TrendingUp, Search, Info, Trash2, Mail, Loader2 } from 'lucide-react';
 
 ChartJS.register(
   CategoryScale,
@@ -33,18 +35,62 @@ ChartJS.register(
 
 interface HistoryTrendProps {
   records: SportRecord[];
+  currentUserEmail?: string;
   onBack: () => void;
   onDeleteRecord?: (recordId: string) => Promise<void>;
 }
 
-export function HistoryTrend({ records, onBack, onDeleteRecord }: HistoryTrendProps) {
+export function HistoryTrend({ records, currentUserEmail, onBack, onDeleteRecord }: HistoryTrendProps) {
   const [selectedYear, setSelectedYear] = useState<string>('2026');
   const [searchTerm, setSearchTerm] = useState('');
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  
+  // New state for email searching
+  const [searchEmail, setSearchEmail] = useState('');
+  const [targetEmail, setTargetEmail] = useState(currentUserEmail || '');
+  const [displayRecords, setDisplayRecords] = useState<SportRecord[]>(records);
+  const [isSearching, setIsSearching] = useState(false);
+
+  // Sync displayRecords with records prop if targetEmail matches currentUserEmail
+  useEffect(() => {
+    if (!targetEmail || targetEmail === currentUserEmail) {
+      setDisplayRecords(records);
+    }
+  }, [records, targetEmail, currentUserEmail]);
+
+  const handleEmailSearch = async () => {
+    if (!searchEmail) {
+      setTargetEmail(currentUserEmail || '');
+      return;
+    }
+
+    const emailToSearch = searchEmail.trim().toLowerCase();
+    setTargetEmail(emailToSearch);
+    
+    if (emailToSearch === currentUserEmail?.toLowerCase()) {
+      setDisplayRecords(records);
+      return;
+    }
+
+    setIsSearching(true);
+    try {
+      const q = query(
+        collection(db, 'sport_records'), 
+        where('userEmail', '==', emailToSearch)
+      );
+      const snapshot = await getDocs(q);
+      const fetchedRecords = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as SportRecord));
+      setDisplayRecords(fetchedRecords.sort((a, b) => b.timestamp - a.timestamp));
+    } catch (error) {
+      handleFirestoreError(error, OperationType.LIST, 'sport_records');
+    } finally {
+      setIsSearching(false);
+    }
+  };
 
   const years = useMemo(() => {
     const yearSet = new Set(['2026', '2025', '2024']);
-    records.forEach(r => {
+    displayRecords.forEach(r => {
       const year = new Date(r.timestamp).getFullYear();
       if (year >= 2020 && year <= 2030) {
         yearSet.add(year.toString());
@@ -54,7 +100,7 @@ export function HistoryTrend({ records, onBack, onDeleteRecord }: HistoryTrendPr
   }, [records]);
 
   const filteredRecords = useMemo(() => {
-    return records.filter(r => {
+    return displayRecords.filter(r => {
       const date = new Date(r.timestamp);
       const yearMatch = selectedYear === 'ALL' || date.getFullYear().toString() === selectedYear;
       const searchMatch = !searchTerm || 
@@ -63,7 +109,7 @@ export function HistoryTrend({ records, onBack, onDeleteRecord }: HistoryTrendPr
         (r.notes || '').toLowerCase().includes(searchTerm.toLowerCase());
       return yearMatch && searchMatch;
     }).sort((a, b) => b.timestamp - a.timestamp);
-  }, [records, selectedYear, searchTerm]);
+  }, [displayRecords, selectedYear, searchTerm]);
 
   const stats = useMemo(() => {
     const monthsData = Array.from({ length: 12 }, (_, i) => ({
@@ -199,9 +245,56 @@ export function HistoryTrend({ records, onBack, onDeleteRecord }: HistoryTrendPr
         </button>
         <div>
           <span className="font-mono text-xs tracking-[0.3em] text-[#FF512F] font-bold uppercase mb-1 block">ANALYTICS</span>
-          <h2 className="text-3xl font-black tracking-tight text-white">年度運動趨勢</h2>
+          <h2 className="text-3xl font-black tracking-tight text-white">
+            {targetEmail === currentUserEmail ? '我的運動趨勢' : '運動趨勢查詢'}
+          </h2>
+          {targetEmail && targetEmail !== currentUserEmail && (
+            <p className="text-xs text-gray-400 mt-1 font-medium flex items-center gap-1">
+              正在查看：<span className="text-[#FF512F]">{targetEmail}</span> 的數據
+            </p>
+          )}
         </div>
       </header>
+
+      {/* User Search */}
+      <div className="bg-[#121212] p-6 rounded-[32px] border border-white/5 shadow-2xl space-y-4">
+        <div className="flex items-center gap-2">
+          <Mail className="w-4 h-4 text-[#FF512F]" />
+          <span className="text-sm font-black text-white uppercase tracking-widest">查詢特定使用者</span>
+        </div>
+        <div className="flex gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+            <input 
+              type="email"
+              placeholder="輸入使用者的 Email..."
+              value={searchEmail}
+              onChange={(e) => setSearchEmail(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleEmailSearch()}
+              className="w-full bg-[#1A1A1A] border border-white/10 rounded-2xl py-3 pl-12 pr-4 text-sm text-white placeholder:text-gray-600 focus:border-[#FF512F] outline-none transition-all"
+            />
+          </div>
+          <button 
+            onClick={handleEmailSearch}
+            disabled={isSearching}
+            className="bg-white text-black px-6 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-white/90 transition-all disabled:opacity-50"
+          >
+            {isSearching ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : '查詢'}
+          </button>
+        </div>
+        {targetEmail && targetEmail !== currentUserEmail && (
+          <button 
+            onClick={() => {
+              setSearchEmail('');
+              setTargetEmail(currentUserEmail || '');
+              setDisplayRecords(records);
+            }}
+            className="text-[10px] font-bold text-gray-500 hover:text-white transition-colors uppercase tracking-widest"
+          >
+            ← 返回我的紀錄
+          </button>
+        )}
+      </div>
 
       {/* Controls */}
       <div className="flex flex-col gap-4 bg-[#121212] p-6 rounded-[32px] border border-white/5 shadow-2xl">
@@ -316,7 +409,7 @@ export function HistoryTrend({ records, onBack, onDeleteRecord }: HistoryTrendPr
                       <span className="text-[11px] text-gray-500 font-mono">{r.duration.toFixed(1)} hrs</span>
                     </div>
 
-                    {onDeleteRecord && (
+                    {onDeleteRecord && targetEmail === currentUserEmail && (
                       <button
                         onClick={() => handleDelete(r.id)}
                         disabled={deletingId === r.id}
