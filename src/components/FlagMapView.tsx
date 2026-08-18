@@ -7,7 +7,7 @@ import { ChevronLeft, Globe, Search, Loader2, Flag } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import React, { useMemo, useState, useEffect } from 'react';
 import { COUNTRIES } from '../data/countries';
-import { FlagMark, CheckIn } from '../types';
+import { FlagMark } from '../types';
 import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { MapContainer, TileLayer, GeoJSON } from 'react-leaflet';
