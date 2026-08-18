@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Search, Map as MapIcon, ChevronRight, Loader2, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
 import { 
@@ -16,7 +16,6 @@ import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { JapanVisit } from '../types';
 import { PREFECTURES } from '../data/japanPrefectures';
-import { JAPAN_MAP_DATA } from '../data/japanMapData';
 import { cn } from '../lib/utils';
 
 interface JapanPublicMapProps {
@@ -26,10 +25,25 @@ interface JapanPublicMapProps {
 export function JapanPublicMap({ onBack }: JapanPublicMapProps) {
   const [searchEmail, setSearchEmail] = useState('');
   const [loading, setLoading] = useState(false);
+  const [mapLoading, setMapLoading] = useState(true);
+  const [geoData, setGeoData] = useState<any>(null);
   const [searchedVisits, setSearchedVisits] = useState<JapanVisit[]>([]);
   const [hasSearched, setHasSearched] = useState(false);
   const [zoom, setZoom] = useState(1);
   const [center, setCenter] = useState<[number, number]>([138.5, 37.5]);
+
+  // Load map data asynchronously to reduce main bundle size
+  useEffect(() => {
+    import('../data/japanMapData')
+      .then((module) => {
+        setGeoData(module.JAPAN_MAP_DATA);
+        setMapLoading(false);
+      })
+      .catch((err) => {
+        console.error("Failed to load map data dynamically:", err);
+        setMapLoading(false);
+      });
+  }, []);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,16 +79,15 @@ export function JapanPublicMap({ onBack }: JapanPublicMapProps) {
       (name_local && name_local.includes(p.name))
     );
     
-    // Default color is a light gray to ensure visibility on black background
     if (!pref) return '#666'; 
 
     const visit = searchedVisits.find(v => v.prefectureId === pref.id);
     const count = visit ? visit.count : 0;
 
     if (count === 0) return '#666'; 
-    if (count === 1) return '#22C55E'; // 綠色
-    if (count > 1 && count <= 5) return '#EAB308'; // 黃色
-    return '#EF4444'; // 紅色
+    if (count === 1) return '#22C55E'; 
+    if (count > 1 && count <= 5) return '#EAB308'; 
+    return '#EF4444'; 
   };
 
   const handleZoomIn = () => {
@@ -126,6 +139,13 @@ export function JapanPublicMap({ onBack }: JapanPublicMapProps) {
         </form>
 
         <div className="relative bg-[#121212] rounded-[40px] border border-white/5 overflow-hidden aspect-[4/5] shadow-2xl flex items-center justify-center">
+          {mapLoading && (
+            <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-[#121212]">
+              <Loader2 className="w-10 h-10 text-[#FF512F] animate-spin mb-4" />
+              <span className="text-xs font-bold text-gray-500 tracking-widest uppercase tracking-widest">地圖資料初始化中...</span>
+            </div>
+          )}
+
           {/* Map Controls */}
           <div className="absolute top-6 right-6 z-40 flex flex-col gap-2">
             <button onClick={handleZoomIn} className="w-10 h-10 bg-black/60 backdrop-blur-md border border-white/10 rounded-xl flex items-center justify-center hover:bg-white/20 transition-all shadow-xl active:scale-90">
@@ -140,42 +160,44 @@ export function JapanPublicMap({ onBack }: JapanPublicMapProps) {
           </div>
 
           {/* Actual Map Content */}
-          <ComposableMap
-            projection="geoMercator"
-            projectionConfig={{
-              scale: 1800,
-              center: [138.5, 37.5]
-            }}
-            className="w-full h-full"
-          >
-            <ZoomableGroup
-              zoom={zoom}
-              center={center}
-              onMoveEnd={({ coordinates, zoom }) => {
-                setCenter(coordinates as [number, number]);
-                setZoom(zoom);
+          {geoData && (
+            <ComposableMap
+              projection="geoMercator"
+              projectionConfig={{
+                scale: 1800,
+                center: [138.5, 37.5]
               }}
+              className="w-full h-full"
             >
-              <Geographies geography={JAPAN_MAP_DATA}>
-                {({ geographies }) =>
-                  geographies.map((geo) => {
-                    const fill = getPrefectureColor(geo);
-                    return (
-                      <Geography
-                        key={geo.rsmKey}
-                        geography={geo}
-                        style={{
-                          default: { fill: fill, outline: "none", stroke: "#000", strokeWidth: 0.5 },
-                          hover: { fill: fill === '#666' ? '#888' : fill, outline: "none", stroke: "#FFF", strokeWidth: 1.5 },
-                          pressed: { fill: fill, outline: "none" }
-                        }}
-                      />
-                    );
-                  })
-                }
-              </Geographies>
-            </ZoomableGroup>
-          </ComposableMap>
+              <ZoomableGroup
+                zoom={zoom}
+                center={center}
+                onMoveEnd={({ coordinates, zoom }) => {
+                  setCenter(coordinates as [number, number]);
+                  setZoom(zoom);
+                }}
+              >
+                <Geographies geography={geoData}>
+                  {({ geographies }) =>
+                    geographies.map((geo) => {
+                      const fill = getPrefectureColor(geo);
+                      return (
+                        <Geography
+                          key={geo.rsmKey}
+                          geography={geo}
+                          style={{
+                            default: { fill: fill, outline: "none", stroke: "#000", strokeWidth: 0.5 },
+                            hover: { fill: fill === '#666' ? '#888' : fill, outline: "none", stroke: "#FFF", strokeWidth: 1.5 },
+                            pressed: { fill: fill, outline: "none" }
+                          }}
+                        />
+                      );
+                    })
+                  }
+                </Geographies>
+              </ZoomableGroup>
+            </ComposableMap>
+          )}
 
           {/* Legend Overlay */}
           <div className="absolute bottom-6 left-6 right-6 flex justify-between items-center bg-black/60 backdrop-blur-md border border-white/10 p-4 rounded-2xl z-30">
