@@ -1,38 +1,99 @@
 {
-  "collections": [
-    {
-      "name": "users",
-      "fields": [
-        { "name": "id", "type": "string" },
-        { "name": "email", "type": "string" },
-        { "name": "name", "type": "string" },
-        { "name": "picture", "type": "string" }
-      ]
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "App user profile information",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "email": { "type": "string" },
+        "name": { "type": "string" },
+        "picture": { "type": "string" }
+      },
+      "required": ["id", "email", "name"]
     },
-    {
-      "name": "check_ins",
-      "fields": [
-        { "name": "userId", "type": "string" },
-        { "name": "userEmail", "type": "string" },
-        { "name": "tripcode", "type": "string" },
-        { "name": "lat", "type": "number" },
-        { "name": "lng", "type": "number" },
-        { "name": "locationName", "type": "string" },
-        { "name": "notes", "type": "string" },
-        { "name": "timestamp", "type": "number" }
-      ]
+    "CheckIn": {
+      "title": "CheckIn",
+      "description": "User location check-in record",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "userEmail": { "type": "string" },
+        "tripcode": { "type": "string" },
+        "lat": { "type": "number" },
+        "lng": { "type": "number" },
+        "locationName": { "type": "string" },
+        "notes": { "type": "string" },
+        "timestamp": { "type": "number" }
+      },
+      "required": ["id", "userId", "lat", "lng", "locationName", "timestamp"]
     },
-    {
-      "name": "sport_records",
-      "fields": [
-        { "name": "userId", "type": "string" },
-        { "name": "type", "type": "string" },
-        { "name": "duration", "type": "number" },
-        { "name": "distance", "type": "number" },
-        { "name": "notes", "type": "string" },
-        { "name": "date", "type": "string" },
-        { "name": "timestamp", "type": "number" }
-      ]
+    "SportRecord": {
+      "title": "SportRecord",
+      "description": "User activity/sport session",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "userEmail": { "type": "string" },
+        "type": { "type": "string" },
+        "duration": { "type": "number" },
+        "distance": { "type": "number" },
+        "notes": { "type": "string" },
+        "date": { "type": "string" },
+        "timestamp": { "type": "number" }
+      },
+      "required": ["id", "userId", "type", "duration", "timestamp"]
+    },
+    "FlagMark": {
+      "title": "FlagMark",
+      "description": "Mark for collected world flags",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "countryId": { "type": "string" },
+        "visited": { "type": "boolean" },
+        "timestamp": { "type": "number" }
+      },
+      "required": ["id", "userId", "countryId", "visited", "timestamp"]
+    },
+    "JapanVisit": {
+      "title": "JapanVisit",
+      "description": "Visits to Japan prefectures",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "userEmail": { "type": "string" },
+        "prefectureId": { "type": "string" },
+        "count": { "type": "number" },
+        "timestamp": { "type": "number" }
+      },
+      "required": ["id", "userId", "prefectureId", "count", "timestamp"]
     }
-  ]
+  },
+  "firestore": {
+    "users/{userId}": {
+      "schema": "User",
+      "description": "Global user profiles"
+    },
+    "check_ins/{checkInId}": {
+      "schema": "CheckIn",
+      "description": "Location check-in records"
+    },
+    "sport_records/{recordId}": {
+      "schema": "SportRecord",
+      "description": "Sport and activity logs"
+    },
+    "flag_marks/{markId}": {
+      "schema": "FlagMark",
+      "description": "Collected world flags"
+    },
+    "japan_visits/{visitId}": {
+      "schema": "JapanVisit",
+      "description": "Japan prefecture visit counts"
+    }
+  }
 }

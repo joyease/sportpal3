@@ -1,5 +1,5 @@
 {
-  "name": "SportPal 3 年度版",
+  "name": "My Sports Pal",
   "description": "SportPal v3 - 支援 1~12 月年度運動趨勢圖表與補錄日期功能。",
   "requestFramePermissions": ["geolocation"],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]

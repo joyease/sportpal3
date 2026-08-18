@@ -1,4 +1,4 @@
-# SportPal 3 年度版
+# My Sports Pal
 
 此專案為 SportPal v3，支援 1~12 月年度運動趨勢圖表與補錄日期功能。
 

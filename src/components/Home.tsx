@@ -21,17 +21,17 @@ const SECTIONS = [
     bgColor: 'rgba(95, 15, 15, 0.75)', // 勃根地紅
     desc: '挑戰台灣巔峰時刻。',
     image: mountainsBanner,
-    link: 'https://joyease.github.io/mymap/2608small100hills.html',
+    link: 'https://joyease.github.io/peak100/index.html',
   },
   {
-    id: 'japan',
+    id: 'japan_map',
     title: '日本47地通',
     eyebrow: 'JAPAN EXPLORER',
     color: '#FF5E62',
     bgColor: 'rgba(95, 45, 15, 0.75)', // 深琥珀橙
     desc: '探索日本各地區魅力地圖。',
     image: travelBanner,
-    link: 'https://joyease.github.io/game/2603LightJP.html',
+    link: '#',
   },
   {
     id: 'flag_map',
@@ -76,35 +76,56 @@ const SECTIONS = [
 ];
 
 interface HomeProps {
-  onSelectTab?: (tab: string) => void;
+  onSelectTab: (tab: string) => void;
   user: User | null;
+  onLoginRequest: () => void;
 }
 
-export function Home({ onSelectTab, user }: HomeProps) {
+export function Home({ onSelectTab, user, onLoginRequest }: HomeProps) {
+  const handleProfileClick = () => {
+    if (user) {
+      onSelectTab('profile');
+    } else {
+      onLoginRequest();
+    }
+  };
+
   return (
     <div className="flex flex-col bg-[#0A0A0A] min-h-screen pb-32">
-      <header className="h-20 flex justify-between items-center px-8 bg-[#121212] border-b border-white/10 shrink-0">
+      <header className="h-20 flex justify-between items-center px-6 bg-[#121212] border-b border-white/10 shrink-0">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-gradient-to-tr from-[#FF512F] to-[#DD2476] rounded-lg flex items-center justify-center font-black text-white transform rotate-12">
+          <div className="w-8 h-8 bg-gradient-to-tr from-[#FF512F] to-[#DD2476] rounded-lg flex items-center justify-center font-black text-white transform rotate-12 shrink-0">
             S
           </div>
-          <span className="text-xl font-black tracking-tighter text-white">
-            SportPal <span className="text-[#FF512F]">愛動咖</span>
+          <span className="text-xl font-black tracking-tighter text-white truncate">
+            My Sports Pal <span className="text-[#FF512F]">愛動咖</span>
           </span>
         </div>
         
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleProfileClick}
+            className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 transition-all active:scale-90 group overflow-hidden"
+            title={user ? "個人中心" : "登入"}
+          >
+            {user ? (
+              <img src={user.picture} alt={user.name} className="w-full h-full object-cover" />
+            ) : (
+              <UserIcon className="w-5 h-5 text-gray-300 group-hover:text-white" />
+            )}
+          </button>
+
           <a 
             href="https://sportpal.hermann.tw/" 
             target="_blank" 
             rel="noopener noreferrer"
             className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 hover:border-[#FF512F]/40 transition-all shadow-lg active:scale-95 group"
-            title="前往愛動咖官網"
+            title="前往關於頁面"
           >
-            <div className="w-8 h-8 rounded-full overflow-hidden border border-[#FF512F]/60 shrink-0 bg-[#1A1A1A]">
+            <div className="w-7 h-7 rounded-full overflow-hidden border border-[#FF512F]/60 shrink-0 bg-[#1A1A1A]">
               <img 
                 src={sportpalAvatarIcon} 
-                alt="愛動咖 SportPal 官網" 
+                alt="愛動咖 My Sports Pal" 
                 referrerPolicy="no-referrer"
                 className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
               />
@@ -118,7 +139,7 @@ export function Home({ onSelectTab, user }: HomeProps) {
 
       <main className="flex-1 flex flex-col">
         {SECTIONS.map((section, index) => {
-          const isInternal = (section.id === 'flag_map' || section.id === 'travel' || section.id === 'history') && onSelectTab;
+          const isInternal = (section.id === 'flag_map' || section.id === 'travel' || section.id === 'history' || section.id === 'japan_map') && onSelectTab;
           
           const Content = (
             <>
@@ -152,6 +173,7 @@ export function Home({ onSelectTab, user }: HomeProps) {
 
           if (isInternal) {
             const targetTab = section.id === 'flag_map' ? 'flag_map' : 
+                            section.id === 'japan_map' ? 'japan_map' :
                             section.id === 'travel' ? 'map' : 'trend';
             return (
               <motion.div

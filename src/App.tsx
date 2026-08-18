@@ -11,11 +11,13 @@ import { HistoryTrend } from './components/HistoryTrend';
 import { TravelMap } from './components/TravelMap';
 import { FlagCollector } from './components/FlagCollector';
 import { FlagMapView } from './components/FlagMapView';
+import { JapanExplorer } from './components/JapanExplorer';
+import { JapanPublicMap } from './components/JapanPublicMap';
 import { Navigation } from './components/Navigation';
 import { LoginModal } from './components/LoginModal';
-import { User, CheckIn as CheckInData, SportRecord, Page, FlagMark } from './types';
+import { User, CheckIn as CheckInData, SportRecord, Page, FlagMark, JapanVisit } from './types';
 import { motion, AnimatePresence } from 'motion/react';
-import { LogOut, User as UserIcon, Mail, Loader2 } from 'lucide-react';
+import { LogOut, User as UserIcon, Mail, Loader2, Map as MapIcon } from 'lucide-react';
 import { auth, db, googleProvider, handleFirestoreError, OperationType } from './lib/firebase';
 import { signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth';
 import { doc, setDoc, collection, query, where, onSnapshot, deleteDoc } from 'firebase/firestore';
@@ -32,6 +34,7 @@ export default function App() {
   const [checkIns, setCheckIns] = useState<CheckInData[]>([]);
   const [sportRecords, setSportRecords] = useState<SportRecord[]>([]);
   const [flagMarks, setFlagMarks] = useState<FlagMark[]>([]);
+  const [japanVisits, setJapanVisits] = useState<JapanVisit[]>([]);
 
   // Auth Listener
   useEffect(() => {
@@ -110,6 +113,21 @@ export default function App() {
     return () => unsubscribe();
   }, [isLoggedIn, user]);
 
+  // Firestore Sync - JapanVisits
+  useEffect(() => {
+    if (!isLoggedIn || !user) return;
+
+    const q = query(collection(db, 'japan_visits'), where('userId', '==', user.id));
+    const unsubscribe = onSnapshot(q, 
+      (snapshot) => {
+        const data = snapshot.docs.map(doc => doc.data() as JapanVisit);
+        setJapanVisits(data);
+      },
+      (error) => handleFirestoreError(error, OperationType.LIST, 'japan_visits')
+    );
+    return () => unsubscribe();
+  }, [isLoggedIn, user]);
+
   const handleTabChange = (tab: string) => {
     const page = tab as Page;
     if ((page === 'checkin' || page === 'records' || page === 'map' || page === 'flags') && !isLoggedIn) {
@@ -133,6 +151,36 @@ export default function App() {
           userEmail: user.email.toLowerCase(),
           countryId,
           visited: true,
+          timestamp: Date.now()
+        });
+      } else {
+        await deleteDoc(docRef);
+      }
+    } catch (error) {
+      handleFirestoreError(error, OperationType.WRITE, path);
+    }
+  };
+
+  const handleToggleJapanVisit = async (prefId: string, currentCount: number) => {
+    if (!user) return;
+    const path = 'japan_visits';
+    const visitId = `${user.id}_${prefId}`;
+    
+    let nextCount = 0;
+    if (currentCount === 0) nextCount = 1;
+    else if (currentCount === 1) nextCount = 3; // 2-5 range
+    else if (currentCount === 3) nextCount = 6; // 5+ range
+    else nextCount = 0;
+
+    try {
+      const docRef = doc(db, path, visitId);
+      if (nextCount > 0) {
+        await setDoc(docRef, {
+          id: visitId,
+          userId: user.id,
+          userEmail: user.email.toLowerCase(),
+          prefectureId: prefId,
+          count: nextCount,
           timestamp: Date.now()
         });
       } else {
@@ -231,9 +279,21 @@ export default function App() {
   const renderContent = () => {
     switch (activeTab) {
       case 'home':
-        return <Home onSelectTab={(tab) => setActiveTab(tab as Page)} user={user} />;
+        return <Home onSelectTab={(tab) => setActiveTab(tab as Page)} user={user} onLoginRequest={() => setIsLoginModalOpen(true)} />;
       case 'checkin':
         return <CheckIn onSave={handleSaveCheckIn} />;
+      case 'japan':
+        return (
+          <JapanExplorer 
+            visits={japanVisits}
+            onToggleVisit={handleToggleJapanVisit}
+            isLoggedIn={isLoggedIn}
+            onLoginRequest={() => setIsLoginModalOpen(true)}
+            onBack={() => setActiveTab('home')}
+          />
+        );
+      case 'japan_map':
+        return <JapanPublicMap onBack={() => setActiveTab('home')} />;
       case 'records':
         return <Records history={sportRecords} onSave={handleSaveRecord} onDelete={handleDeleteRecord} />;
       case 'map':

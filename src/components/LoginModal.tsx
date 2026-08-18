@@ -59,7 +59,7 @@ export function LoginModal({ isOpen, onClose, onLogin }: LoginModalProps) {
             </div>
             
             <div className="bg-white/[0.02] p-6 text-center text-[10px] text-white/20 font-bold uppercase tracking-widest border-t border-white/5">
-              SportPal • 點擊背景取消
+              My Sports Pal • 點擊背景取消
             </div>
           </motion.div>
         </motion.div>

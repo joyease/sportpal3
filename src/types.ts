@@ -43,4 +43,13 @@ export interface FlagMark {
   timestamp: number;
 }
 
-export type Page = 'home' | 'checkin' | 'records' | 'profile' | 'trend' | 'map' | 'flags' | 'flag_map';
+export interface JapanVisit {
+  id: string; // userId_prefectureId
+  userId: string;
+  userEmail: string;
+  prefectureId: string;
+  count: number;
+  timestamp: number;
+}
+
+export type Page = 'home' | 'checkin' | 'records' | 'profile' | 'trend' | 'map' | 'flags' | 'flag_map' | 'japan' | 'japan_map';

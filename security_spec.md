@@ -1,24 +1,20 @@
-# Security Specification: 愛動咖 SportPal
+# Security Specification - Japan Explorer
 
 ## Data Invariants
-1. A Check-In or Sport Record must belong to the authenticated user who created it (`userId == request.auth.uid`).
-2. Users can only read and write their own profile document.
-3. Check-ins are public to read (for the home page discovery if needed, though currently the user requested private records, I'll stick to private for now as per "Your sports records and location information are only saved in this device" logic, but I'll move it to Cloud). Wait, the user said "After log-in, '打卡' page will show a map for user to reply its GPS".
-4. Let's make Check-ins and Sport Records strictly private to the owner.
+- A Japan visit record must belong to a valid user.
+- The `prefectureId` must be a valid ID from our data list.
+- The `count` must be a valid number (1, 3, or 6 based on current implementation).
 
-## The "Dirty Dozen" Payloads
-1. **P1 (Identity Spoofing)**: Create a sport record with `userId` of another user.
-2. **P2 (Identity Spoofing)**: Update someone else's sport record.
-3. **P3 (State Poisoning)**: Create a record with a negative duration.
-4. **P4 (State Poisoning)**: Create a record with a massive string in `notes` (>1000 chars).
-5. **P5 (Identity Integrity)**: Set `id` field in document to mismatch the document ID.
-6. **P6 (Type Safety)**: Set `lat` or `lng` to a string.
-7. **P7 (Bypass Schema)**: Add a `isVerified: true` ghost field to a user profile.
-8. **P8 (Unauthenticated Access)**: Read sport records without being logged in.
-9. **P9 (Resource Exhaustion)**: Create 100,000 records in a single batch (protected by quotas, but rules should help).
-10. **P10 (PII Leak)**: Read another user's email from the `users` collection.
-11. **P11 (Admin Escalation)**: Attempt to write to a hypothetical `admins` collection.
-12. **P12 (Orphaned Record)**: Create a check-in for a non-existent user.
-
-## Test Runner (Conceptual)
-The `firestore.rules.test.ts` would verify that all above attempts return `PERMISSION_DENIED`.
+## The Dirty Dozen Payloads (Rejection Targets)
+1. Unauthorized create: Create a visit for another user.
+2. Unauthorized update: Change count of someone else's visit.
+3. Invalid ID: Inject malicious strings into `prefectureId`.
+4. Large Payload: Inject 1MB string into `notes`.
+5. Spoofed Auth: Attempt write without `email_verified`.
+6. Negative Count: Set `count` to -1.
+7. Massive Count: Set `count` to 999999.
+8. Orphaned Write: Write visit for non-existent user.
+9. System Field Write: Attempt to overwrite `timestamp` with client time.
+10. Blanket Read: Query all visits without filtering by email.
+11. State Shortcut: Skip registration and write directly to visits.
+12. Identity Spoof: Set `userEmail` to admin email.

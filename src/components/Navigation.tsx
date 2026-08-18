@@ -17,8 +17,8 @@ const ITEMS: NavItem[] = [
   { id: 'home', label: '首頁', icon: HomeIcon },
   { id: 'checkin', label: '打卡', icon: MapPin },
   { id: 'flags', label: '集國旗', icon: Flag },
+  { id: 'japan', label: '日本通', icon: MapIcon },
   { id: 'records', label: '記運動', icon: ClipboardList },
-  { id: 'profile', label: '我的', icon: UserIcon },
 ];
 
 interface NavigationProps {
