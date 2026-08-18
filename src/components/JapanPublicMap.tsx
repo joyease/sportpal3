@@ -3,13 +3,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Search, Map as MapIcon, ChevronRight, Loader2 } from 'lucide-react';
+import { Search, Map as MapIcon, ChevronLeft, Loader2, MapPin } from 'lucide-react';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { JapanVisit } from '../types';
-import { PREFECTURES } from '../data/japanPrefectures';
+import { PREFECTURES, JAPAN_REGIONS } from '../data/japanPrefectures';
 
 interface JapanPublicMapProps {
   onBack: () => void;
@@ -24,11 +24,10 @@ export function JapanPublicMap({ onBack }: JapanPublicMapProps) {
   const [japanSvgData, setJapanSvgData] = useState<any>(null);
   const [searchResults, setSearchResults] = useState<Record<string, number>>({});
   const [hasSearched, setHasSearched] = useState(false);
-  const [status, setStatus] = useState('不同顏色顯示到過 1, 2, 3次 與4次以上!');
+  const [status, setStatus] = useState('輸入好友 Email 查詢日本足跡');
 
-  // Load map data asynchronously from public folder
   useEffect(() => {
-    fetch('/japan_counties.json')
+    fetch('./japan_counties.json')
       .then(res => res.json())
       .then(data => {
         setJapanSvgData(data);
@@ -37,19 +36,15 @@ export function JapanPublicMap({ onBack }: JapanPublicMapProps) {
       .catch(err => {
         console.error('Failed to load map data:', err);
         setMapLoading(false);
-        setStatus('❌ 地圖資料載入失敗，請檢查網路');
+        setStatus('❌ 地圖資料載入失敗');
       });
   }, []);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!searchEmail) {
-      setStatus('⚠️ 請輸入 Email');
-      return;
-    }
+    if (!searchEmail) return;
 
     setLoading(true);
-    setStatus('🔄 載入用戶資料...');
     try {
       const q = query(
         collection(db, 'japan_visits'), 
@@ -67,10 +62,10 @@ export function JapanPublicMap({ onBack }: JapanPublicMapProps) {
       setHasSearched(true);
       
       const visitedCount = Object.keys(counts).length;
-      setStatus(`✅ ${searchEmail} 去過 ${visitedCount}/47 個都道府縣`);
+      setStatus(`✅ 查詢成功！已造訪 ${visitedCount}/47 個地區`);
     } catch (error) {
       console.error('Search failed:', error);
-      setStatus('❌ 載入失敗，請確認網路連線');
+      setStatus('❌ 查詢失敗');
     } finally {
       setLoading(false);
     }
@@ -85,59 +80,69 @@ export function JapanPublicMap({ onBack }: JapanPublicMapProps) {
   const getFillColor = (count: number) => {
     if (count === 0) return COLORS[0];
     if (count === 1) return COLORS[1];
-    if (count === 2) return COLORS[2];
-    if (count === 3) return COLORS[3];
+    if (count >= 2 && count <= 5) return COLORS[2];
+    if (count >= 6 && count <= 9) return COLORS[3];
     return COLORS[4];
   };
 
+  const totalVisits = useMemo(() => 
+    Object.values(searchResults).reduce((sum, count) => sum + count, 0),
+  [searchResults]);
+
   return (
-    <div className="flex flex-col bg-white min-h-screen text-gray-900 font-sans">
-      <header className="p-6 bg-[#ff6b6b] text-white flex items-center gap-4 sticky top-0 z-50 shadow-lg">
-        <button onClick={onBack} className="p-2 hover:bg-white/10 rounded-full transition-colors">
-          <ChevronRight className="w-6 h-6 rotate-180" />
+    <div className="flex flex-col h-screen bg-[#0A0A0A] text-white">
+      <header className="p-4 flex items-center gap-4 border-b border-white/10 shrink-0 bg-[#121212]">
+        <button 
+          onClick={onBack}
+          className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white hover:bg-white/10 transition-all"
+        >
+          <ChevronLeft className="w-6 h-6" />
         </button>
         <div>
-          <h1 className="text-xl md:text-2xl font-black tracking-tight">日本 47 都道府縣旅遊地圖</h1>
+          <span className="font-mono text-[10px] tracking-[0.3em] text-[#ff6b6b] font-black uppercase block">JAPAN FOOTPRINTS</span>
+          <h2 className="text-xl font-black tracking-tight text-white leading-tight">日本 47 都道府縣足跡</h2>
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto w-full p-4 md:p-8 space-y-8">
-        <div className="text-center space-y-4">
-          <h2 className="text-3xl md:text-4xl font-black text-gray-800 tracking-tight">日本好好玩~你去過哪裡?</h2>
-          <p className="text-gray-500 text-lg md:text-xl">跟朋友展示，你在日本47都道府縣的足跡!</p>
-          
-          <form onSubmit={handleSearch} className="flex flex-col md:flex-row gap-4 justify-center items-center mt-8">
-            <input
+      {/* Search Area */}
+      <div className="p-4 bg-[#121212] border-b border-white/10">
+        <form onSubmit={handleSearch} className="flex gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input 
               type="email"
+              required
               value={searchEmail}
               onChange={(e) => setSearchEmail(e.target.value)}
-              placeholder="輸入 Email 查詢地圖..."
-              className="w-full max-w-md border-4 border-gray-100 rounded-2xl py-4 px-6 text-xl text-center focus:border-[#ff6b6b] outline-none transition-all shadow-sm bg-gray-50"
+              placeholder="輸入 Email 查詢好友足跡"
+              className="w-full bg-[#0A0A0A] border border-white/10 rounded-2xl py-3 pl-12 pr-4 text-sm text-white focus:border-[#ff6b6b] outline-none"
             />
-            <button 
-              type="submit"
-              disabled={loading || mapLoading}
-              className="w-full md:w-auto bg-[#ff6b6b] text-white px-10 py-4 rounded-2xl font-black text-xl hover:bg-[#ff5252] transition-all disabled:opacity-50 shadow-lg active:scale-95"
-            >
-              {loading ? <Loader2 className="w-6 h-6 animate-spin mx-auto" /> : '🔍 查詢我的地圖'}
-            </button>
-          </form>
-          
-          <div id="status" className="text-lg font-bold text-[#ff6b6b] min-h-[1.5rem] mt-4">
-            {status}
           </div>
+          <button 
+            type="submit"
+            disabled={loading || mapLoading}
+            className="px-6 bg-[#ff6b6b] text-white font-black rounded-2xl transition-all flex items-center justify-center disabled:opacity-50"
+          >
+            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+          </button>
+        </form>
+        <div className="mt-2 text-center">
+          <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{status}</span>
         </div>
+      </div>
 
-        <div className="relative bg-gray-50 rounded-[40px] border-4 border-gray-100 p-4 shadow-inner overflow-hidden min-h-[300px] flex items-center justify-center">
+      <div className="flex-1 overflow-y-auto">
+        {/* Map Section */}
+        <div className="relative bg-[#0A0A0A] p-4 min-h-[400px] flex items-center justify-center border-b border-white/10 overflow-hidden">
           {mapLoading ? (
             <div className="flex flex-col items-center gap-4">
-              <Loader2 className="w-12 h-12 text-[#ff6b6b] animate-spin" />
-              <span className="font-bold text-gray-400">日本地圖資源加載中...</span>
+              <Loader2 className="w-10 h-10 text-[#ff6b6b] animate-spin" />
+              <span className="text-xs font-bold text-gray-500 tracking-widest uppercase">地圖讀取中...</span>
             </div>
           ) : (
             <svg 
               viewBox="0 0 11300 11300" 
-              className="w-full h-auto drop-shadow-2xl"
+              className="w-full h-full max-h-[70vh] drop-shadow-[0_0_30px_rgba(0,0,0,0.5)]"
               preserveAspectRatio="xMidYMid meet"
             >
               <g>
@@ -149,9 +154,9 @@ export function JapanPublicMap({ onBack }: JapanPublicMapProps) {
                       key={county.id}
                       d={county.path}
                       fill={fill}
-                      stroke="#555"
-                      strokeWidth="15"
-                      className="transition-all duration-500 cursor-pointer hover:stroke-black hover:stroke-[30px] hover:opacity-90"
+                      stroke="#222"
+                      strokeWidth="20"
+                      className="transition-all duration-500 cursor-pointer hover:stroke-white hover:stroke-[40px] hover:opacity-90"
                     >
                       <title>{`${county.title}: ${count}次`}</title>
                     </path>
@@ -169,10 +174,10 @@ export function JapanPublicMap({ onBack }: JapanPublicMapProps) {
                         y={county.center[1]}
                         textAnchor="middle"
                         dominantBaseline="middle"
-                        fontSize="150"
-                        fill="#333"
-                        fontWeight="bold"
-                        className="pointer-events-none"
+                        fontSize="180"
+                        fill="#000"
+                        fontWeight="900"
+                        className="pointer-events-none drop-shadow-sm"
                       >
                         {county.title}
                       </text>
@@ -183,22 +188,97 @@ export function JapanPublicMap({ onBack }: JapanPublicMapProps) {
               </g>
             </svg>
           )}
+
+          {/* Legend Overlay */}
+          <div className="absolute bottom-4 right-4 flex flex-col gap-2 bg-black/60 backdrop-blur-md p-3 rounded-2xl border border-white/10">
+            {COLORS.map((color, i) => (
+              <div key={color} className="flex items-center gap-2">
+                <div 
+                  className="w-3 h-3 rounded-sm border border-white/20" 
+                  style={{ backgroundColor: color }}
+                />
+                <span className="text-[9px] font-bold text-gray-300">
+                  {i === 0 ? '0' : i === 1 ? '1' : i === 2 ? '2-5' : i === 3 ? '6-9' : '10+'}
+                </span>
+              </div>
+            ))}
+          </div>
         </div>
 
-        <div className="flex flex-wrap justify-center gap-6 pb-12">
-          {COLORS.map((color, i) => (
-            <div key={color} className="flex items-center gap-3 bg-white px-6 py-3 rounded-full shadow-md border border-gray-100">
-              <div 
-                className="w-10 h-8 rounded-lg border-2 border-gray-800" 
-                style={{ backgroundColor: color }}
-              />
-              <span className="font-bold text-gray-700">
-                {i === 0 ? '0 (未去過)' : i === 4 ? '4次以上' : `${i}次`}
-              </span>
+        {/* Stats Section */}
+        <div className="p-6 space-y-8 pb-32">
+          {hasSearched ? (
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="space-y-8"
+            >
+              <div className="flex items-end justify-between">
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <MapPin className="w-4 h-4 text-[#ff6b6b]" />
+                    <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em]">
+                      查詢帳號: {searchEmail}
+                    </h3>
+                  </div>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-4xl font-black text-[#ff6b6b] tracking-tighter leading-none">
+                      {Object.keys(searchResults).length}
+                    </span>
+                    <span className="text-xs font-bold text-gray-400">個行政區，共 {totalVisits} 次造訪</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Grouped Prefecture List */}
+              <div className="space-y-6">
+                {JAPAN_REGIONS.map(region => {
+                  const regionPrefs = PREFECTURES.filter(p => p.region === region);
+                  const visitedInRegion = regionPrefs.filter(p => searchResults[p.id] > 0);
+                  
+                  if (visitedInRegion.length === 0) return null;
+
+                  return (
+                    <div key={region} className="space-y-3">
+                      <h4 className="text-[10px] font-black text-gray-500 uppercase tracking-widest px-2">{region}</h4>
+                      <div className="grid grid-cols-2 gap-2">
+                        {visitedInRegion.map(pref => (
+                          <div 
+                            key={pref.id}
+                            className="bg-[#121212] p-4 rounded-2xl border border-white/5 flex items-center justify-between"
+                          >
+                            <div className="flex flex-col">
+                              <span className="text-xs font-black text-white">{pref.name}</span>
+                              <span className="text-[9px] font-bold text-gray-500 uppercase tracking-tighter">{pref.enName}</span>
+                            </div>
+                            <div 
+                              className="w-8 h-8 rounded-lg flex items-center justify-center font-black text-xs border border-white/10"
+                              style={{ 
+                                backgroundColor: getFillColor(searchResults[pref.id]),
+                                color: searchResults[pref.id] >= 2 ? '#000' : '#FFF'
+                              }}
+                            >
+                              {searchResults[pref.id]}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </motion.div>
+          ) : (
+            <div className="py-20 text-center text-gray-600">
+              <MapIcon className="w-12 h-12 mx-auto mb-4 opacity-20" />
+              <p className="text-sm font-bold leading-relaxed">
+                輸入好友 Email 點亮日本地圖<br />
+                查看他們在 47 都道府縣的足跡
+              </p>
             </div>
-          ))}
+          )}
         </div>
-      </main>
+      </div>
     </div>
   );
 }

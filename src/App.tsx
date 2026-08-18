@@ -168,8 +168,9 @@ export default function App() {
     
     let nextCount = 0;
     if (currentCount === 0) nextCount = 1;
-    else if (currentCount === 1) nextCount = 3; // 2-5 range
-    else if (currentCount === 3) nextCount = 6; // 5+ range
+    else if (currentCount === 1) nextCount = 2;  // Represents 2-5 range
+    else if (currentCount === 2) nextCount = 6;  // Represents 6-9 range
+    else if (currentCount === 6) nextCount = 10; // Represents 10+ range
     else nextCount = 0;
 
     try {

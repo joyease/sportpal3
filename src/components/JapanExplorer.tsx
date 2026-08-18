@@ -29,16 +29,18 @@ export function JapanExplorer({ visits, onToggleVisit, isLoggedIn, onLoginReques
 
   const getVisitColor = (count: number) => {
     if (count === 0) return 'bg-[#1A1A1A] border-white/5 text-gray-500';
-    if (count === 1) return 'bg-green-500/20 border-green-500/30 text-green-400 shadow-[0_0_15px_rgba(34,197,94,0.1)]';
-    if (count > 1 && count <= 5) return 'bg-yellow-500/20 border-yellow-500/30 text-yellow-400 shadow-[0_0_15px_rgba(234,179,8,0.1)]';
-    return 'bg-red-500/20 border-red-500/30 text-red-400 shadow-[0_0_15px_rgba(239,68,68,0.1)]';
+    if (count === 1) return 'bg-[#4CAF50]/20 border-[#4CAF50]/30 text-[#4CAF50] shadow-[0_0_15px_rgba(76,175,80,0.1)]';
+    if (count >= 2 && count <= 5) return 'bg-[#FFEB3B]/20 border-[#FFEB3B]/30 text-[#FFEB3B] shadow-[0_0_15px_rgba(255,235,59,0.1)]';
+    if (count >= 6 && count <= 9) return 'bg-[#FF9800]/20 border-[#FF9800]/30 text-[#FF9800] shadow-[0_0_15px_rgba(255,152,0,0.1)]';
+    return 'bg-[#F44336]/20 border-[#F44336]/30 text-[#F44336] shadow-[0_0_15px_rgba(244,67,54,0.1)]';
   };
 
   const getVisitLabel = (count: number) => {
     if (count === 0) return '尚未造訪';
     if (count === 1) return '1次';
-    if (count > 1 && count <= 5) return '2-5次';
-    return '5次以上';
+    if (count >= 2 && count <= 5) return '2-5次';
+    if (count >= 6 && count <= 9) return '6-9次';
+    return '10次以上';
   };
 
   const visitMap = visits.reduce((acc, v) => {
@@ -170,16 +172,20 @@ export function JapanExplorer({ visits, onToggleVisit, isLoggedIn, onLoginReques
         </h4>
         <div className="grid grid-cols-2 gap-4">
           <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-green-500/50" />
+            <div className="w-3 h-3 rounded-full bg-[#4CAF50]/50" />
             <span className="text-xs font-bold text-gray-300">1次造訪</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-yellow-500/50" />
+            <div className="w-3 h-3 rounded-full bg-[#FFEB3B]/50" />
             <span className="text-xs font-bold text-gray-300">2-5次造訪</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-red-500/50" />
-            <span className="text-xs font-bold text-gray-300">5次以上</span>
+            <div className="w-3 h-3 rounded-full bg-[#FF9800]/50" />
+            <span className="text-xs font-bold text-gray-300">6-9次造訪</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded-full bg-[#F44336]/50" />
+            <span className="text-xs font-bold text-gray-300">10次以上</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-full bg-white/10" />
