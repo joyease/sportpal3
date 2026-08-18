@@ -18,8 +18,8 @@ import { JapanVisit } from '../types';
 import { PREFECTURES } from '../data/japanPrefectures';
 import { cn } from '../lib/utils';
 
-// Using a standard TopoJSON for Japan
-const JAPAN_MAP_URL = "https://cdn.jsdelivr.net/npm/japan-atlas@1/japan.topo.json";
+// Using local map data to bypass CORS issues
+const JAPAN_MAP_URL = "/japan.json";
 
 interface JapanPublicMapProps {
   onBack: () => void;
@@ -29,22 +29,27 @@ export function JapanPublicMap({ onBack }: JapanPublicMapProps) {
   const [searchEmail, setSearchEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [mapLoading, setMapLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [geoData, setGeoData] = useState<any>(null);
   const [searchedVisits, setSearchedVisits] = useState<JapanVisit[]>([]);
   const [hasSearched, setHasSearched] = useState(false);
   const [zoom, setZoom] = useState(1);
   const [center, setCenter] = useState<[number, number]>([138.5, 37.5]);
 
-  // Pre-load map data to ensure it's ready
+  // Pre-load map data from local server
   useEffect(() => {
     fetch(JAPAN_MAP_URL)
-      .then(res => res.json())
+      .then(res => {
+        if (!res.ok) throw new Error("Local map file not found");
+        return res.json();
+      })
       .then(data => {
         setGeoData(data);
         setMapLoading(false);
       })
       .catch(err => {
-        console.error("Failed to fetch Japan map data:", err);
+        console.error("Failed to load local Japan map data:", err);
+        setLoadError(true);
         setMapLoading(false);
       });
   }, []);
@@ -84,12 +89,12 @@ export function JapanPublicMap({ onBack }: JapanPublicMapProps) {
     );
     
     // Default color is a light gray to ensure visibility on black background
-    if (!pref) return '#555'; 
+    if (!pref) return '#888'; 
 
     const visit = searchedVisits.find(v => v.prefectureId === pref.id);
     const count = visit ? visit.count : 0;
 
-    if (count === 0) return '#555'; 
+    if (count === 0) return '#888'; 
     if (count === 1) return '#22C55E'; // 綠色
     if (count > 1 && count <= 5) return '#EAB308'; // 黃色
     return '#EF4444'; // 紅色
@@ -152,6 +157,13 @@ export function JapanPublicMap({ onBack }: JapanPublicMapProps) {
             </div>
           )}
 
+          {loadError && (
+            <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-[#121212] p-8 text-center">
+              <div className="text-red-500 font-black text-xl mb-2">地圖載入失敗</div>
+              <p className="text-gray-400 text-sm">請重新整理頁面，或檢查伺服器連線。</p>
+            </div>
+          )}
+
           {/* Map Controls */}
           <div className="absolute top-6 right-6 z-40 flex flex-col gap-2">
             <button onClick={handleZoomIn} className="w-10 h-10 bg-black/60 backdrop-blur-md border border-white/10 rounded-xl flex items-center justify-center hover:bg-white/20 transition-all shadow-xl active:scale-90">
@@ -192,8 +204,8 @@ export function JapanPublicMap({ onBack }: JapanPublicMapProps) {
                           key={geo.rsmKey}
                           geography={geo}
                           style={{
-                            default: { fill: fill, outline: "none", stroke: "#000", strokeWidth: 0.3 },
-                            hover: { fill: fill === '#555' ? '#777' : fill, outline: "none", stroke: "#FF512F", strokeWidth: 1 },
+                            default: { fill: fill, outline: "none", stroke: "#000", strokeWidth: 0.5 },
+                            hover: { fill: fill === '#888' ? '#AAA' : fill, outline: "none", stroke: "#FFF", strokeWidth: 1.5 },
                             pressed: { fill: fill, outline: "none" }
                           }}
                         />
