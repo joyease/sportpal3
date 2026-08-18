@@ -1,4 +1,4 @@
-export const JAPAN_SVG_DATA = {
+{
   "counties": [
     {
       "id": "county_1",
@@ -424,4 +424,4 @@ export const JAPAN_SVG_DATA = {
       ]
     }
   ]
-};
+}

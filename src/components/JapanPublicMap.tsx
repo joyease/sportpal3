@@ -3,14 +3,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Search, Map as MapIcon, ChevronRight, Loader2, RotateCcw } from 'lucide-react';
+import { Search, Map as MapIcon, ChevronRight, Loader2 } from 'lucide-react';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { JapanVisit } from '../types';
 import { PREFECTURES } from '../data/japanPrefectures';
-import { JAPAN_SVG_DATA } from '../data/japanSvgData';
 
 interface JapanPublicMapProps {
   onBack: () => void;
@@ -21,9 +20,26 @@ const COLORS = ['#999', '#4CAF50', '#FFEB3B', '#FF9800', '#F44336'];
 export function JapanPublicMap({ onBack }: JapanPublicMapProps) {
   const [searchEmail, setSearchEmail] = useState('');
   const [loading, setLoading] = useState(false);
+  const [mapLoading, setMapLoading] = useState(true);
+  const [japanSvgData, setJapanSvgData] = useState<any>(null);
   const [searchResults, setSearchResults] = useState<Record<string, number>>({});
   const [hasSearched, setHasSearched] = useState(false);
   const [status, setStatus] = useState('不同顏色顯示到過 1, 2, 3次 與4次以上!');
+
+  // Load map data asynchronously from public folder
+  useEffect(() => {
+    fetch('/japan_counties.json')
+      .then(res => res.json())
+      .then(data => {
+        setJapanSvgData(data);
+        setMapLoading(false);
+      })
+      .catch(err => {
+        console.error('Failed to load map data:', err);
+        setMapLoading(false);
+        setStatus('❌ 地圖資料載入失敗，請檢查網路');
+      });
+  }, []);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,7 +77,6 @@ export function JapanPublicMap({ onBack }: JapanPublicMapProps) {
   };
 
   const getVisitCountForCounty = (countyTitle: string) => {
-    // Match county title (e.g. "愛知") with PREFECTURES data (e.g. "愛知縣")
     const pref = PREFECTURES.find(p => p.name.startsWith(countyTitle));
     if (!pref) return 0;
     return searchResults[pref.id] || 0;
@@ -101,7 +116,7 @@ export function JapanPublicMap({ onBack }: JapanPublicMapProps) {
             />
             <button 
               type="submit"
-              disabled={loading}
+              disabled={loading || mapLoading}
               className="w-full md:w-auto bg-[#ff6b6b] text-white px-10 py-4 rounded-2xl font-black text-xl hover:bg-[#ff5252] transition-all disabled:opacity-50 shadow-lg active:scale-95"
             >
               {loading ? <Loader2 className="w-6 h-6 animate-spin mx-auto" /> : '🔍 查詢我的地圖'}
@@ -113,54 +128,61 @@ export function JapanPublicMap({ onBack }: JapanPublicMapProps) {
           </div>
         </div>
 
-        <div className="relative bg-gray-50 rounded-[40px] border-4 border-gray-100 p-4 shadow-inner overflow-hidden">
-          <svg 
-            viewBox="0 0 11300 11300" 
-            className="w-full h-auto drop-shadow-2xl"
-            preserveAspectRatio="xMidYMid meet"
-          >
-            <g>
-              {JAPAN_SVG_DATA.counties.map((county: any) => {
-                const count = getVisitCountForCounty(county.title);
-                const fill = getFillColor(count);
-                return (
-                  <path
-                    key={county.id}
-                    d={county.path}
-                    fill={fill}
-                    stroke="#555"
-                    strokeWidth="15"
-                    className="transition-all duration-500 cursor-pointer hover:stroke-black hover:stroke-[30px] hover:opacity-90"
-                  >
-                    <title>{`${county.title}: ${count}次`}</title>
-                  </path>
-                );
-              })}
-            </g>
-            <g pointerEvents="none">
-              {JAPAN_SVG_DATA.counties.map((county: any) => {
-                const count = getVisitCountForCounty(county.title);
-                if (count > 0 && county.center) {
+        <div className="relative bg-gray-50 rounded-[40px] border-4 border-gray-100 p-4 shadow-inner overflow-hidden min-h-[300px] flex items-center justify-center">
+          {mapLoading ? (
+            <div className="flex flex-col items-center gap-4">
+              <Loader2 className="w-12 h-12 text-[#ff6b6b] animate-spin" />
+              <span className="font-bold text-gray-400">日本地圖資源加載中...</span>
+            </div>
+          ) : (
+            <svg 
+              viewBox="0 0 11300 11300" 
+              className="w-full h-auto drop-shadow-2xl"
+              preserveAspectRatio="xMidYMid meet"
+            >
+              <g>
+                {japanSvgData?.counties.map((county: any) => {
+                  const count = getVisitCountForCounty(county.title);
+                  const fill = getFillColor(count);
                   return (
-                    <text
-                      key={`text-${county.id}`}
-                      x={county.center[0]}
-                      y={county.center[1]}
-                      textAnchor="middle"
-                      dominantBaseline="middle"
-                      fontSize="150"
-                      fill="#333"
-                      fontWeight="bold"
-                      className="pointer-events-none"
+                    <path
+                      key={county.id}
+                      d={county.path}
+                      fill={fill}
+                      stroke="#555"
+                      strokeWidth="15"
+                      className="transition-all duration-500 cursor-pointer hover:stroke-black hover:stroke-[30px] hover:opacity-90"
                     >
-                      {county.title}
-                    </text>
+                      <title>{`${county.title}: ${count}次`}</title>
+                    </path>
                   );
-                }
-                return null;
-              })}
-            </g>
-          </svg>
+                })}
+              </g>
+              <g pointerEvents="none">
+                {japanSvgData?.counties.map((county: any) => {
+                  const count = getVisitCountForCounty(county.title);
+                  if (count > 0 && county.center) {
+                    return (
+                      <text
+                        key={`text-${county.id}`}
+                        x={county.center[0]}
+                        y={county.center[1]}
+                        textAnchor="middle"
+                        dominantBaseline="middle"
+                        fontSize="150"
+                        fill="#333"
+                        fontWeight="bold"
+                        className="pointer-events-none"
+                      >
+                        {county.title}
+                      </text>
+                    );
+                  }
+                  return null;
+                })}
+              </g>
+            </svg>
+          )}
         </div>
 
         <div className="flex flex-wrap justify-center gap-6 pb-12">
