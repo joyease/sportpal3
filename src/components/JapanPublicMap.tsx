@@ -16,10 +16,8 @@ import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { JapanVisit } from '../types';
 import { PREFECTURES } from '../data/japanPrefectures';
+import { JAPAN_MAP_DATA } from '../data/japanMapData';
 import { cn } from '../lib/utils';
-
-// Using a highly reliable CDN source for Japan map
-const JAPAN_MAP_URL = "https://cdn.jsdelivr.net/npm/japan-atlas@1/japan.topo.json";
 
 interface JapanPublicMapProps {
   onBack: () => void;
@@ -158,7 +156,7 @@ export function JapanPublicMap({ onBack }: JapanPublicMapProps) {
                 setZoom(zoom);
               }}
             >
-              <Geographies geography={JAPAN_MAP_URL}>
+              <Geographies geography={JAPAN_MAP_DATA}>
                 {({ geographies }) =>
                   geographies.map((geo) => {
                     const fill = getPrefectureColor(geo);
