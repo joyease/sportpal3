@@ -11,6 +11,7 @@ import historyBanner from '../assets/images/sports_record_banner_1786595579220.j
 import sportpalAvatarIcon from '../assets/images/sportpal_avatar_icon_1786697460164.jpg';
 
 import { User } from '../types';
+import { Search, ChevronRight, User as UserIcon } from 'lucide-react';
 
 const SECTIONS = [
   {

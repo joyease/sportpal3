@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Search, Map as MapIcon, ChevronRight, Loader2, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
 import { 

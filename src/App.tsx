@@ -389,7 +389,19 @@ export default function App() {
           </div>
         );
       default:
-        return <Home onSelectTab={(tab) => setActiveTab(tab as Page)} user={user} />;
+        return (
+          <Home 
+            onSelectTab={(tab) => {
+              if (tab === 'map') setActiveTab('travel');
+              else if (tab === 'trends') setActiveTab('trends');
+              else if (tab === 'flag_map') setActiveTab('flag_map');
+              else if (tab === 'japan_map') setActiveTab('japan_map');
+              else setActiveTab('trends');
+            }} 
+            user={user} 
+            onLoginRequest={() => {}}
+          />
+        );
     }
   };
 
