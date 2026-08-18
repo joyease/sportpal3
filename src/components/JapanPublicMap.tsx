@@ -3,252 +3,180 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Search, Map as MapIcon, ChevronRight, Loader2, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
-import { 
-  ComposableMap, 
-  Geographies, 
-  Geography, 
-  ZoomableGroup
-} from 'react-simple-maps';
+import { Search, Map as MapIcon, ChevronRight, Loader2, RotateCcw } from 'lucide-react';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { JapanVisit } from '../types';
 import { PREFECTURES } from '../data/japanPrefectures';
-import { cn } from '../lib/utils';
+import { JAPAN_SVG_DATA } from '../data/japanSvgData';
 
 interface JapanPublicMapProps {
   onBack: () => void;
 }
 
+const COLORS = ['#999', '#4CAF50', '#FFEB3B', '#FF9800', '#F44336'];
+
 export function JapanPublicMap({ onBack }: JapanPublicMapProps) {
   const [searchEmail, setSearchEmail] = useState('');
   const [loading, setLoading] = useState(false);
-  const [mapLoading, setMapLoading] = useState(true);
-  const [geoData, setGeoData] = useState<any>(null);
-  const [searchedVisits, setSearchedVisits] = useState<JapanVisit[]>([]);
+  const [searchResults, setSearchResults] = useState<Record<string, number>>({});
   const [hasSearched, setHasSearched] = useState(false);
-  const [zoom, setZoom] = useState(1);
-  const [center, setCenter] = useState<[number, number]>([138.5, 37.5]);
-
-  // Load map data asynchronously to reduce main bundle size
-  useEffect(() => {
-    import('../data/japanMapData')
-      .then((module) => {
-        setGeoData(module.JAPAN_MAP_DATA);
-        setMapLoading(false);
-      })
-      .catch((err) => {
-        console.error("Failed to load map data dynamically:", err);
-        setMapLoading(false);
-      });
-  }, []);
+  const [status, setStatus] = useState('不同顏色顯示到過 1, 2, 3次 與4次以上!');
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!searchEmail) return;
+    if (!searchEmail) {
+      setStatus('⚠️ 請輸入 Email');
+      return;
+    }
 
     setLoading(true);
-    setSearchedVisits([]);
+    setStatus('🔄 載入用戶資料...');
     try {
       const q = query(
         collection(db, 'japan_visits'), 
         where('userEmail', '==', searchEmail.toLowerCase())
       );
       const snapshot = await getDocs(q);
-      const data = snapshot.docs.map(doc => doc.data() as JapanVisit);
-      setSearchedVisits(data);
+      
+      const counts: Record<string, number> = {};
+      snapshot.docs.forEach(doc => {
+        const data = doc.data() as JapanVisit;
+        counts[data.prefectureId] = data.count;
+      });
+      
+      setSearchResults(counts);
       setHasSearched(true);
+      
+      const visitedCount = Object.keys(counts).length;
+      setStatus(`✅ ${searchEmail} 去過 ${visitedCount}/47 個都道府縣`);
     } catch (error) {
       console.error('Search failed:', error);
+      setStatus('❌ 載入失敗，請確認網路連線');
     } finally {
       setLoading(false);
     }
   };
 
-  const getPrefectureColor = (geo: any) => {
-    const name = geo.properties.name;
-    const name_local = geo.properties.name_local;
-    
-    const pref = PREFECTURES.find(p => 
-      p.enName === name || 
-      p.name === name || 
-      p.name === name_local ||
-      (name && p.name.includes(name)) ||
-      (name_local && name_local.includes(p.name))
-    );
-    
-    if (!pref) return '#666'; 
-
-    const visit = searchedVisits.find(v => v.prefectureId === pref.id);
-    const count = visit ? visit.count : 0;
-
-    if (count === 0) return '#666'; 
-    if (count === 1) return '#22C55E'; 
-    if (count > 1 && count <= 5) return '#EAB308'; 
-    return '#EF4444'; 
+  const getVisitCountForCounty = (countyTitle: string) => {
+    // Match county title (e.g. "愛知") with PREFECTURES data (e.g. "愛知縣")
+    const pref = PREFECTURES.find(p => p.name.startsWith(countyTitle));
+    if (!pref) return 0;
+    return searchResults[pref.id] || 0;
   };
 
-  const handleZoomIn = () => {
-    if (zoom >= 10) return;
-    setZoom(prev => prev * 1.5);
-  };
-
-  const handleZoomOut = () => {
-    if (zoom <= 0.5) return;
-    setZoom(prev => prev / 1.5);
-  };
-
-  const handleReset = () => {
-    setZoom(1);
-    setCenter([138.5, 37.5]);
+  const getFillColor = (count: number) => {
+    if (count === 0) return COLORS[0];
+    if (count === 1) return COLORS[1];
+    if (count === 2) return COLORS[2];
+    if (count === 3) return COLORS[3];
+    return COLORS[4];
   };
 
   return (
-    <div className="flex flex-col bg-[#0A0A0A] min-h-screen text-white">
-      <header className="p-6 bg-[#121212] border-b border-white/10 flex items-center gap-4 sticky top-0 z-50 shadow-xl">
-        <button onClick={onBack} className="p-2 hover:bg-white/5 rounded-full transition-colors">
+    <div className="flex flex-col bg-white min-h-screen text-gray-900 font-sans">
+      <header className="p-6 bg-[#ff6b6b] text-white flex items-center gap-4 sticky top-0 z-50 shadow-lg">
+        <button onClick={onBack} className="p-2 hover:bg-white/10 rounded-full transition-colors">
           <ChevronRight className="w-6 h-6 rotate-180" />
         </button>
         <div>
-          <span className="font-mono text-[10px] tracking-[0.3em] text-[#FF512F] font-bold uppercase mb-1 block">JAPAN MAP EXPLORER</span>
-          <h2 className="text-2xl font-black tracking-tight text-white">日本 47 地通</h2>
+          <h1 className="text-xl md:text-2xl font-black tracking-tight">日本 47 都道府縣旅遊地圖</h1>
         </div>
       </header>
 
-      <div className="p-6 space-y-6">
-        <form onSubmit={handleSearch} className="relative group">
-          <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-            <Search className="h-5 w-5 text-gray-500 group-focus-within:text-[#FF512F] transition-colors" />
-          </div>
-          <input
-            type="email"
-            value={searchEmail}
-            onChange={(e) => setSearchEmail(e.target.value)}
-            placeholder="輸入 Gmail 查詢足跡..."
-            className="w-full bg-[#121212] border border-white/5 text-white rounded-2xl py-4 pl-12 pr-4 focus:outline-none focus:border-[#FF512F]/40 focus:ring-1 focus:ring-[#FF512F]/40 transition-all font-medium"
-          />
-          <button 
-            type="submit"
-            disabled={loading}
-            className="absolute right-2 top-2 bottom-2 bg-white text-black px-4 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-white/90 transition-all disabled:opacity-50 shadow-lg"
-          >
-            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : '查詢'}
-          </button>
-        </form>
-
-        <div className="relative bg-[#121212] rounded-[40px] border border-white/5 overflow-hidden aspect-[4/5] shadow-2xl flex items-center justify-center">
-          {mapLoading && (
-            <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-[#121212]">
-              <Loader2 className="w-10 h-10 text-[#FF512F] animate-spin mb-4" />
-              <span className="text-xs font-bold text-gray-500 tracking-widest uppercase tracking-widest">地圖資料初始化中...</span>
-            </div>
-          )}
-
-          {/* Map Controls */}
-          <div className="absolute top-6 right-6 z-40 flex flex-col gap-2">
-            <button onClick={handleZoomIn} className="w-10 h-10 bg-black/60 backdrop-blur-md border border-white/10 rounded-xl flex items-center justify-center hover:bg-white/20 transition-all shadow-xl active:scale-90">
-              <ZoomIn className="w-5 h-5" />
-            </button>
-            <button onClick={handleZoomOut} className="w-10 h-10 bg-black/60 backdrop-blur-md border border-white/10 rounded-xl flex items-center justify-center hover:bg-white/20 transition-all shadow-xl active:scale-90">
-              <ZoomOut className="w-5 h-5" />
-            </button>
-            <button onClick={handleReset} className="w-10 h-10 bg-black/60 backdrop-blur-md border border-white/10 rounded-xl flex items-center justify-center hover:bg-white/20 transition-all shadow-xl active:scale-90">
-              <RotateCcw className="w-5 h-5" />
-            </button>
-          </div>
-
-          {/* Actual Map Content */}
-          {geoData && (
-            <ComposableMap
-              projection="geoMercator"
-              projectionConfig={{
-                scale: 1800,
-                center: [138.5, 37.5]
-              }}
-              className="w-full h-full"
+      <main className="max-w-6xl mx-auto w-full p-4 md:p-8 space-y-8">
+        <div className="text-center space-y-4">
+          <h2 className="text-3xl md:text-4xl font-black text-gray-800 tracking-tight">日本好好玩~你去過哪裡?</h2>
+          <p className="text-gray-500 text-lg md:text-xl">跟朋友展示，你在日本47都道府縣的足跡!</p>
+          
+          <form onSubmit={handleSearch} className="flex flex-col md:flex-row gap-4 justify-center items-center mt-8">
+            <input
+              type="email"
+              value={searchEmail}
+              onChange={(e) => setSearchEmail(e.target.value)}
+              placeholder="輸入 Email 查詢地圖..."
+              className="w-full max-w-md border-4 border-gray-100 rounded-2xl py-4 px-6 text-xl text-center focus:border-[#ff6b6b] outline-none transition-all shadow-sm bg-gray-50"
+            />
+            <button 
+              type="submit"
+              disabled={loading}
+              className="w-full md:w-auto bg-[#ff6b6b] text-white px-10 py-4 rounded-2xl font-black text-xl hover:bg-[#ff5252] transition-all disabled:opacity-50 shadow-lg active:scale-95"
             >
-              <ZoomableGroup
-                zoom={zoom}
-                center={center}
-                onMoveEnd={({ coordinates, zoom }) => {
-                  setCenter(coordinates as [number, number]);
-                  setZoom(zoom);
-                }}
-              >
-                <Geographies geography={geoData}>
-                  {({ geographies }) =>
-                    geographies.map((geo) => {
-                      const fill = getPrefectureColor(geo);
-                      return (
-                        <Geography
-                          key={geo.rsmKey}
-                          geography={geo}
-                          style={{
-                            default: { fill: fill, outline: "none", stroke: "#000", strokeWidth: 0.5 },
-                            hover: { fill: fill === '#666' ? '#888' : fill, outline: "none", stroke: "#FFF", strokeWidth: 1.5 },
-                            pressed: { fill: fill, outline: "none" }
-                          }}
-                        />
-                      );
-                    })
-                  }
-                </Geographies>
-              </ZoomableGroup>
-            </ComposableMap>
-          )}
-
-          {/* Legend Overlay */}
-          <div className="absolute bottom-6 left-6 right-6 flex justify-between items-center bg-black/60 backdrop-blur-md border border-white/10 p-4 rounded-2xl z-30">
-            <div className="flex gap-4">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.4)]" />
-                <span className="text-[10px] font-black text-gray-300 uppercase tracking-tighter">1次</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-yellow-500 shadow-[0_0_10px_rgba(234,179,8,0.4)]" />
-                <span className="text-[10px] font-black text-gray-300 uppercase tracking-tighter">2-5次</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.4)]" />
-                <span className="text-[10px] font-black text-gray-300 uppercase tracking-tighter">5次+</span>
-              </div>
-            </div>
-            {hasSearched && (
-              <span className="text-[10px] font-black text-[#FF512F] uppercase tracking-widest animate-pulse">
-                {searchedVisits.length > 0 ? '載入成功' : '無紀錄'}
-              </span>
-            )}
+              {loading ? <Loader2 className="w-6 h-6 animate-spin mx-auto" /> : '🔍 查詢我的地圖'}
+            </button>
+          </form>
+          
+          <div id="status" className="text-lg font-bold text-[#ff6b6b] min-h-[1.5rem] mt-4">
+            {status}
           </div>
         </div>
 
-        <AnimatePresence>
-          {hasSearched && searchedVisits.length > 0 && (
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 20 }}
-              className="space-y-4"
-            >
-              <h4 className="font-black text-xs text-white/40 uppercase tracking-[0.2em] px-2 flex items-center gap-2">
-                <div className="w-1 h-3 bg-[#FF512F]" />
-                造訪統計詳細
-              </h4>
-              <div className="bg-[#121212] rounded-3xl border border-white/5 p-6 grid grid-cols-2 gap-4 shadow-inner">
-                <div className="space-y-1">
-                  <div className="text-[10px] font-black text-gray-500 uppercase tracking-widest">總造訪次數</div>
-                  <div className="text-3xl font-black text-white tracking-tighter">{searchedVisits.reduce((sum, v) => sum + v.count, 0)}</div>
-                </div>
-                <div className="space-y-1">
-                  <div className="text-[10px] font-black text-gray-500 uppercase tracking-widest">點亮地區</div>
-                  <div className="text-3xl font-black text-white tracking-tighter">{searchedVisits.length}</div>
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
+        <div className="relative bg-gray-50 rounded-[40px] border-4 border-gray-100 p-4 shadow-inner overflow-hidden">
+          <svg 
+            viewBox="0 0 11300 11300" 
+            className="w-full h-auto drop-shadow-2xl"
+            preserveAspectRatio="xMidYMid meet"
+          >
+            <g>
+              {JAPAN_SVG_DATA.counties.map((county: any) => {
+                const count = getVisitCountForCounty(county.title);
+                const fill = getFillColor(count);
+                return (
+                  <path
+                    key={county.id}
+                    d={county.path}
+                    fill={fill}
+                    stroke="#555"
+                    strokeWidth="15"
+                    className="transition-all duration-500 cursor-pointer hover:stroke-black hover:stroke-[30px] hover:opacity-90"
+                  >
+                    <title>{`${county.title}: ${count}次`}</title>
+                  </path>
+                );
+              })}
+            </g>
+            <g pointerEvents="none">
+              {JAPAN_SVG_DATA.counties.map((county: any) => {
+                const count = getVisitCountForCounty(county.title);
+                if (count > 0 && county.center) {
+                  return (
+                    <text
+                      key={`text-${county.id}`}
+                      x={county.center[0]}
+                      y={county.center[1]}
+                      textAnchor="middle"
+                      dominantBaseline="middle"
+                      fontSize="150"
+                      fill="#333"
+                      fontWeight="bold"
+                      className="pointer-events-none"
+                    >
+                      {county.title}
+                    </text>
+                  );
+                }
+                return null;
+              })}
+            </g>
+          </svg>
+        </div>
+
+        <div className="flex flex-wrap justify-center gap-6 pb-12">
+          {COLORS.map((color, i) => (
+            <div key={color} className="flex items-center gap-3 bg-white px-6 py-3 rounded-full shadow-md border border-gray-100">
+              <div 
+                className="w-10 h-8 rounded-lg border-2 border-gray-800" 
+                style={{ backgroundColor: color }}
+              />
+              <span className="font-bold text-gray-700">
+                {i === 0 ? '0 (未去過)' : i === 4 ? '4次以上' : `${i}次`}
+              </span>
+            </div>
+          ))}
+        </div>
+      </main>
     </div>
   );
 }
