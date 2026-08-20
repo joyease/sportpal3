@@ -11,8 +11,12 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    function isEmailVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
     function isOwner(userId) {
-      return isSignedIn() && request.auth.uid == userId;
+      return isEmailVerified() && request.auth.uid == userId;
     }
 
     function isValidId(id) {
@@ -23,67 +27,86 @@ service cloud.firestore {
       return request.resource.data;
     }
 
+    function isValidEmail(email) {
+      return email is string && email.size() <= 100 && email.matches('^.+@.+\\..+$');
+    }
+
     // Users collection
     match /users/{userId} {
       allow get: if isSignedIn();
       allow create, update: if isOwner(userId) 
         && incoming().id == userId
-        && incoming().email is string
-        && incoming().name is string;
+        && isValidEmail(incoming().email)
+        && incoming().name is string
+        && incoming().name.size() <= 50;
     }
 
     // Check-ins collection
     match /check_ins/{checkInId} {
       allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
       allow get: if isSignedIn() && resource.data.userId == request.auth.uid;
-      allow create: if isSignedIn() 
+      allow create: if isEmailVerified() 
         && incoming().userId == request.auth.uid
         && incoming().lat is number
-        && incoming().lng is number;
-      allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+        && incoming().lng is number
+        && incoming().locationName is string
+        && incoming().locationName.size() <= 200
+        && incoming().notes.size() <= 1000;
+      allow delete: if isOwner(resource.data.userId);
     }
 
     // Sport records collection
     match /sport_records/{recordId} {
       allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
       allow get: if isSignedIn() && resource.data.userId == request.auth.uid;
-      allow create: if isSignedIn() 
+      allow create: if isEmailVerified() 
         && incoming().userId == request.auth.uid
         && incoming().type is string
-        && incoming().duration is number;
-      allow update: if isSignedIn() && resource.data.userId == request.auth.uid;
-      allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+        && incoming().type.size() <= 50
+        && incoming().duration is number
+        && incoming().notes.size() <= 1000;
+      allow update: if isOwner(resource.data.userId)
+        && incoming().userId == resource.data.userId; 
+      allow delete: if isOwner(resource.data.userId);
     }
 
     // Flag marks collection
     match /flag_marks/{markId} {
-      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
-      allow create, update: if isSignedIn() 
+      // Allow list ONLY if querying for own data OR filtering by a specific email
+      allow list: if isSignedIn() && (
+        resource.data.userId == request.auth.uid || 
+        (request.query.limit <= 100 && request.query.filters.size() > 0)
+      );
+      
+      allow get: if isSignedIn();
+      
+      allow create, update: if isEmailVerified() 
         && incoming().userId == request.auth.uid
         && incoming().countryId is string
+        && incoming().countryId.size() <= 10
         && incoming().visited is bool;
-      allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow delete: if isOwner(resource.data.userId);
     }
 
     // Japan visits collection
     match /japan_visits/{visitId} {
-      // Public read by email query is allowed for the Japan Map feature
-      allow list: if true; 
-      
+      // Public read must include a filter (cannot dump whole collection)
+      allow list: if request.query.limit <= 100 && request.query.filters.size() > 0; 
       allow get: if true;
 
-      allow create: if isSignedIn()
+      allow create: if isEmailVerified()
         && incoming().userId == request.auth.uid
         && incoming().count is number
         && incoming().count >= 0
+        && incoming().count <= 999
         && incoming().prefectureId is string;
 
-      allow update: if isSignedIn()
-        && resource.data.userId == request.auth.uid
+      allow update: if isOwner(resource.data.userId)
         && incoming().count is number
-        && incoming().count >= 0;
+        && incoming().count >= 0
+        && incoming().count <= 999;
 
-      allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow delete: if isOwner(resource.data.userId);
     }
   }
 }

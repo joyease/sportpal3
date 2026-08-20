@@ -92,15 +92,15 @@ export function Home({ onSelectTab, user, onLoginRequest }: HomeProps) {
   };
 
   return (
-    <div className="flex flex-col bg-[#0A0A0A] min-h-screen pb-32">
+    <div className="flex flex-col bg-[#D1D1D1] min-h-screen pb-32">
       <header className="h-20 flex justify-between items-center px-6 bg-[#121212] border-b border-white/10 shrink-0">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 bg-gradient-to-tr from-[#FF512F] to-[#DD2476] rounded-lg flex items-center justify-center font-black text-white transform rotate-12 shrink-0">
             S
           </div>
-          <span className="text-xl font-black tracking-tighter text-white truncate">
-            My Sports Pal <span className="text-[#FF512F]">愛動咖</span>
-          </span>
+          <h1 className="text-xl font-black tracking-tighter text-white truncate">
+            MySportsPal
+          </h1>
         </div>
         
         <div className="flex items-center gap-2">
@@ -138,12 +138,19 @@ export function Home({ onSelectTab, user, onLoginRequest }: HomeProps) {
         </div>
       </header>
 
-      <main className="flex-1 flex flex-col">
+      {/* Header spacer with subtitle */}
+      <div className="py-4 flex items-center bg-[#D1D1D1] px-12 md:px-24">
+        <span className="text-sm font-black text-black tracking-[0.1em]">
+          愛動咖: 運動旅遊愛打卡
+        </span>
+      </div>
+
+      <main className="flex-1 flex flex-col px-4 md:px-8 gap-2">
         {SECTIONS.map((section, index) => {
           const isInternal = (section.id === 'flag_map' || section.id === 'travel' || section.id === 'history' || section.id === 'japan_map') && onSelectTab;
           
           const Content = (
-            <>
+            <div className="relative w-full h-full flex flex-col justify-center px-8 md:px-16 overflow-hidden rounded-[24px]">
               <img
                 src={section.image}
                 alt={section.title}
@@ -162,14 +169,14 @@ export function Home({ onSelectTab, user, onLoginRequest }: HomeProps) {
                 >
                   {section.eyebrow}
                 </span>
-                <h2 className="text-2xl md:text-4xl font-black tracking-tight text-white mb-0.5 group-hover:translate-x-2 transition-transform duration-300">
+                <h2 className="text-lg md:text-xl font-black tracking-tight text-white mb-0.5 group-hover:translate-x-2 transition-transform duration-300">
                   {section.title}
                 </h2>
-                <p className="text-gray-500 text-xs md:text-sm font-medium max-w-xs md:max-w-md">
+                <p className="text-gray-400 text-[10px] md:text-xs font-medium max-w-xs md:max-w-md">
                   {section.desc}
                 </p>
               </div>
-            </>
+            </div>
           );
 
           if (isInternal) {
@@ -180,10 +187,10 @@ export function Home({ onSelectTab, user, onLoginRequest }: HomeProps) {
               <motion.div
                 key={section.id}
                 onClick={() => onSelectTab(targetTab)}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
+                initial={{ opacity: 0, scale: 0.98 }}
+                animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: index * 0.1 }}
-                className="group relative flex-1 min-h-[90px] border-b border-white/5 overflow-hidden cursor-pointer flex flex-col justify-center px-8 md:px-16"
+                className="group relative h-[85px] shrink-0 cursor-pointer"
               >
                 {Content}
               </motion.div>
@@ -196,15 +203,18 @@ export function Home({ onSelectTab, user, onLoginRequest }: HomeProps) {
               href={section.link}
               target="_blank"
               rel="noopener noreferrer"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: index * 0.1 }}
-              className="group relative flex-1 min-h-[90px] border-b border-white/5 overflow-hidden cursor-pointer flex flex-col justify-center px-8 md:px-16"
+              className="group relative h-[85px] shrink-0 cursor-pointer"
             >
               {Content}
             </motion.a>
           );
         })}
+
+        {/* Footer spacer */}
+        <div className="h-2 bg-[#D1D1D1] shrink-0" />
       </main>
     </div>
   );
