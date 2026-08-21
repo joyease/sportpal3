@@ -1,6 +1,7 @@
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
+ * Last Updated: 2026-08-20 (Diagnostic Update)
  */
 
 import { useState, useEffect } from 'react';
