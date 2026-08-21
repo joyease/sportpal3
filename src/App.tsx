@@ -219,10 +219,19 @@ export default function App() {
       }
     } catch (error: any) {
       console.error('Login failed:', error);
-      if (error.code === 'auth/internal-error' || error.code === 'auth/invalid-action-code' || error.message.includes('action is invalid')) {
-        alert('認證失敗：請檢查您的網域是否已加入 Firebase 授權清單。');
+      const errorCode = error.code || 'unknown';
+      const errorMessage = error.message || '無詳細訊息';
+      
+      if (errorCode === 'auth/unauthorized-domain') {
+        alert(`網域授權失敗 (auth/unauthorized-domain)：\n請將 ${window.location.hostname} 加入 Firebase 控制台的 Authorized Domains。`);
+      } else if (errorCode === 'auth/popup-closed-by-user') {
+        // Silently handle popup closed
+      } else if (errorCode === 'auth/cancelled-popup-request') {
+        // Silently handle cancelled
+      } else if (errorCode === 'auth/internal-error' || errorCode === 'auth/invalid-action-code' || errorMessage.includes('action is invalid')) {
+        alert(`認證無效：請檢查您的網域是否已加入 Firebase 授權清單。\n代碼: ${errorCode}`);
       } else {
-        alert('登入失敗，請稍後再試');
+        alert(`登入失敗！\n錯誤代碼: ${errorCode}\n訊息: ${errorMessage}`);
       }
     }
   };
