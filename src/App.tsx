@@ -1,10 +1,10 @@
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
- * Last Updated: 2026-08-20 (Diagnostic Update)
+ * Last Updated: 2026-08-20 (Force Diagnostic Update v2.1)
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Home } from './components/Home';
 import { CheckIn } from './components/CheckIn';
 import { Records } from './components/Records';
