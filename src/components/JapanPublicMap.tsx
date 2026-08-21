@@ -86,7 +86,7 @@ export function JapanPublicMap({ onBack }: JapanPublicMapProps) {
   };
 
   const totalVisits = useMemo(() => 
-    Object.values(searchResults).reduce((sum, count) => sum + count, 0),
+    Object.values(searchResults).reduce((sum: number, count: number) => sum + count, 0),
   [searchResults]);
 
   return (

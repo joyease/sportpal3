@@ -74,6 +74,16 @@ const SECTIONS = [
     image: mountainsBanner,
     link: 'https://www.mysports.net.tw/mHealthWebportal/event/2603LightTW3.html',
   },
+  {
+    id: 'tw_townships',
+    title: '臺灣368鄉鎮區',
+    eyebrow: 'TAIWAN 368 TOWNSHIPS',
+    color: '#00E676',
+    bgColor: 'rgba(20, 60, 50, 0.75)', // 翡翠墨綠
+    desc: '探索走遍全台 368 個鄉鎮市區足跡。',
+    image: townshipsBanner,
+    link: 'https://joyease.github.io/TWM368/index.html',
+  },
 ];
 
 interface HomeProps {
