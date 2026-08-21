@@ -18,7 +18,7 @@ import { LoginModal } from './components/LoginModal';
 import { User, CheckIn as CheckInData, SportRecord, Page, FlagMark, JapanVisit } from './types';
 import { motion, AnimatePresence } from 'motion/react';
 import { LogOut, User as UserIcon, Mail, Loader2, Map as MapIcon } from 'lucide-react';
-import { auth, db, googleProvider, handleFirestoreError, OperationType } from './lib/firebase';
+import { auth, db, googleProvider, handleFirestoreError, OperationType, sendEmailVerification } from './lib/firebase';
 import { signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth';
 import { doc, setDoc, collection, query, where, onSnapshot, deleteDoc } from 'firebase/firestore';
 
@@ -29,6 +29,8 @@ export default function App() {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [pendingTab, setPendingTab] = useState<Page | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [verificationSent, setVerificationSent] = useState(false);
 
   // Real Data State
   const [checkIns, setCheckIns] = useState<CheckInData[]>([]);
@@ -194,15 +196,49 @@ export default function App() {
 
   const handleLogin = async () => {
     try {
-      await signInWithPopup(auth, googleProvider);
+      const result = await signInWithPopup(auth, googleProvider);
       setIsLoginModalOpen(false);
+      
+      // Check if email is verified
+      if (result.user && !result.user.emailVerified) {
+        // Automatically try to send verification if not verified
+        try {
+          await sendEmailVerification(result.user);
+          setVerificationSent(true);
+        } catch (vError: any) {
+          console.error('Verification email failed:', vError);
+          if (vError.code === 'auth/unauthorized-continue-uri') {
+             // Handle domain auth issues
+          }
+        }
+      }
+
       if (pendingTab) {
         setActiveTab(pendingTab);
         setPendingTab(null);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Login failed:', error);
-      alert('登入失敗，請稍後再試');
+      if (error.code === 'auth/internal-error' || error.code === 'auth/invalid-action-code' || error.message.includes('action is invalid')) {
+        alert('認證失敗：請檢查您的網域是否已加入 Firebase 授權清單。');
+      } else {
+        alert('登入失敗，請稍後再試');
+      }
+    }
+  };
+
+  const handleResendVerification = async () => {
+    if (!auth.currentUser) return;
+    setIsVerifying(true);
+    try {
+      await sendEmailVerification(auth.currentUser);
+      setVerificationSent(true);
+      alert('驗證信已寄出，請檢查您的收件夾');
+    } catch (error) {
+      console.error('Failed to send verification:', error);
+      alert('發送失敗，請確認網域授權或稍後再試');
+    } finally {
+      setIsVerifying(false);
     }
   };
 
@@ -278,9 +314,38 @@ export default function App() {
   }
 
   const renderContent = () => {
+    // Shared Verification Banner
+    const verificationBanner = isLoggedIn && auth.currentUser && !auth.currentUser.emailVerified && (
+      <div className="bg-amber-500/10 border border-amber-500/20 p-4 rounded-2xl mb-6 flex flex-col gap-3">
+        <div className="flex items-start gap-3">
+          <Mail className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+          <div className="space-y-1">
+            <h4 className="text-sm font-black text-amber-500 uppercase tracking-wider">電子郵件尚未驗證</h4>
+            <p className="text-xs text-amber-200/70 leading-relaxed font-medium">
+              為了防止惡意灌水，我們要求所有紀錄功能都必須經過 Email 驗證。請檢查您的 Gmail 收件夾。
+            </p>
+          </div>
+        </div>
+        <button
+          onClick={handleResendVerification}
+          disabled={isVerifying || verificationSent}
+          className="bg-amber-500 text-black text-[10px] font-black uppercase tracking-widest py-2 rounded-xl hover:bg-amber-400 transition-all disabled:opacity-50"
+        >
+          {isVerifying ? '發送中...' : verificationSent ? '已寄出，請檢查信箱' : '重新發送驗證信'}
+        </button>
+      </div>
+    );
+
     switch (activeTab) {
       case 'home':
-        return <Home onSelectTab={(tab) => setActiveTab(tab as Page)} user={user} onLoginRequest={() => setIsLoginModalOpen(true)} />;
+        return (
+          <div className="flex flex-col">
+            {activeTab === 'home' && verificationBanner && (
+              <div className="px-6 pt-4">{verificationBanner}</div>
+            )}
+            <Home onSelectTab={(tab) => setActiveTab(tab as Page)} user={user} onLoginRequest={() => setIsLoginModalOpen(true)} />
+          </div>
+        );
       case 'checkin':
         return <CheckIn onSave={handleSaveCheckIn} />;
       case 'japan':
@@ -326,6 +391,8 @@ export default function App() {
               <span className="font-mono text-xs tracking-[0.3em] text-[#FF512F] font-bold uppercase mb-2 block">USER PROFILE</span>
               <h2 className="text-4xl font-black tracking-tight text-white">個人中心</h2>
             </header>
+
+            {verificationBanner}
 
             {isLoggedIn && user ? (
               <div className="space-y-8">
